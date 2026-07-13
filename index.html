@@ -1,262 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ceylon RS | Professional Web3 Gaming Hub</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://pl29823826.effectivecpmnetwork.com/95/56/e9/9556e9b07a294ef0d1534a7afef4c2c2.js"></script>
-
-    <style>
-        :root {
-            --bg: #050810;
-            --card: rgba(16, 22, 35, 0.85);
-            --neon-blue: #00f2ff;
-            --neon-purple: #7000ff;
-            --text: #ffffff;
-            --text-muted: #8F9BB3;
-            --gold: #ffcc00;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; -webkit-text-size-adjust: 100%; }
-
-        .bg-glow {
-            position: fixed; width: 300px; height: 300px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(112, 0, 255, 0.12), transparent 70%);
-            filter: blur(40px); z-index: -1;
-        }
-
-        /* --- AUTH SCREEN --- */
-        #auth-screen {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg);
-            display: flex; justify-content: center; align-items: center; z-index: 999; padding: 15px;
-        }
-        .auth-card {
-            background: var(--card); padding: 35px 25px; border-radius: 24px; width: 100%; max-width: 360px;
-            text-align: center; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px);
-        }
-        .auth-card h1 { font-size: 26px; font-weight: 900; letter-spacing: 2px; margin-bottom: 8px; color: var(--neon-blue); }
-        .auth-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
-        .auth-input {
-            width: 100%; padding: 14px; margin-bottom: 14px; border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0,0,0,0.4);
-            color: white; font-size: 14px; outline: none;
-        }
-        .auth-input:focus { border-color: var(--neon-blue); }
-
-        /* --- MAIN DASHBOARD INTERFACE --- */
-        #dashboard-screen { display: none; }
-        .header {
-            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
-            background: rgba(10, 15, 28, 0.9); border-bottom: 1px solid rgba(255,255,255,0.08);
-            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
-        }
-        .logo { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: var(--neon-blue); }
-        .balance-card { background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 50px; border: 1px solid var(--neon-blue); font-size: 14px; font-weight: bold; }
-
-        .main-grid { display: flex; flex-direction: column; gap: 15px; padding: 15px; max-width: 1200px; margin: auto; }
-        .panel-card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .price-up { color: #00ff88; font-weight: bold; font-size: 14px; margin-left: 5px; }
-
-        .ref-box { display: flex; gap: 8px; margin-top: 12px; }
-        .ref-url { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); flex: 1; font-size: 12px; color: var(--neon-blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: center; }
-
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
-        .game-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-            padding: 25px 15px; border-radius: 18px; text-align: center; cursor: pointer;
-            transition: 0.3s; border: 1px solid rgba(255,255,255,0.06);
-        }
-        .game-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 242, 255, 0.15); }
-        .game-card i { font-size: 32px; margin-bottom: 12px; color: var(--neon-blue); }
-        .game-card h4 { font-size: 14px; }
-
-        .feed-item { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #ccc; }
-        .feed-item b { color: var(--neon-blue); }
-
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; justify-content: center; align-items: center; }
-        .modal-content { background: #101623; padding: 30px 20px; border-radius: 24px; text-align: center; max-width: 340px; width: 90%; border: 1px solid rgba(255,255,255,0.08); }
-
-        .wheel-container { width: 220px; height: 220px; border: 4px solid #fff; border-radius: 50%; margin: 15px auto; position: relative; transition: 4s cubic-bezier(0.1, 0.9, 0.1, 1); }
-        .wheel-pointer { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 16px; height: 24px; background: red; clip-path: polygon(50% 100%, 0 0, 100% 0); z-index: 10; }
-
-        .btn-action {
-            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-            color: black; border: none; padding: 12px 28px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px;
-        }
-
-        .ad-container { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; margin: 10px 0; border-radius: 8px; min-height: 50px; }
-        .desktop-only { display: block; }
-        .mobile-only { display: none; }
-        
-        @media (max-width: 768px) {
-            .desktop-only { display: none; }
-            .mobile-only { display: flex; }
-        }
-
-        @media (min-width: 769px) {
-            .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CeylonRs Mining Rewards</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0a0f1f, #1a2b4c);
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #0d1b33;
+      padding: 20px;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #00bfff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+    .content {
+      margin-top: 40px;
+    }
+    iframe {
+      border: 0;
+      width: 70%;
+      height: 250px;
+      margin: 20px auto;
+      display: block;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,191,255,0.4);
+    }
+    footer {
+      margin-top: 50px;
+      padding: 10px;
+      font-size: 0.9em;
+      color: #aaa;
+    }
+  </style>
 </head>
 <body>
+  <header>💎 CeylonRs Mining Rewards</header>
 
-<div class="bg-glow" style="top: 5%; left: 5%;"></div>
-<div class="bg-glow" style="bottom: 5%; right: 5%;"></div>
+  <div class="content">
+    <h2>Earn Crypto While You Play!</h2>
+    <p>Watch ads, mine coins, and get rewarded instantly.</p>
 
-<div id="auth-screen">
-    <div class="auth-card">
-        <h1>CEYLON RS</h1>
-        <p>Login to your secure gaming dashboard</p>
-        <input type="email" id="auth-email" class="auth-input" placeholder="Enter Gmail Address">
-        <input type="password" id="auth-password" class="auth-input" placeholder="Access Password">
-        <button class="btn-action" style="width: 100%; margin-top: 5px;" onclick="handleAuth()">ENTER DASHBOARD</button>
+    <!-- BEGIN AADS AD UNIT 2446107 -->
+    <div id="frame">
+      <iframe data-aa='2446107' src='//acceptable.a-ads.com/2446107/?size=Adaptive'
+        style='border:0; padding:0; width:70%; height:auto; overflow:hidden; display:block; margin:auto'></iframe>
     </div>
-</div>
+    <!-- END AADS AD UNIT 2446107 -->
+  </div>
 
-<div id="dashboard-screen">
-    <header class="header">
-        <div class="logo">CEYLON <span style="color: #fff;">RS</span></div>
-        <div class="balance-card">
-            <i class="fa-solid fa-wallet" style="color: #00f2ff; margin-right: 6px;"></i>
-            <span id="crs-balance">0.00</span> <small>CRS</small>
-        </div>
-    </header>
-
-    <div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998; margin-top: 15px;">
-        <iframe data-aa='2446107' src='//acceptable.a-ads.com/2446107/?size=Adaptive' style='border:0; padding:0; width:70%; height:auto; overflow:hidden;display: block;margin: auto'></iframe>
-    </div>
-
-    <div class="main-grid">
-        <div class="content-left">
-            <div class="panel-card">
-                <div class="chart-header">
-                    <div>
-                        <h3 style="font-size: 15px;">RS / USDT <small style="color: #888;">Ceyloncoin Live</small></h3>
-                        <h2 id="live-price" style="font-size: 22px; margin-top: 2px;">⚡ Fetching Realtime...</h2>
-                    </div>
-                    <div>
-                        <button class="btn-action" style="padding: 6px 14px; font-size: 11px;" onclick="hourlyReward()">BONUS</button>
-                    </div>
-                </div>
-                <div style="width:100%; height:120px; position:relative;">
-                    <canvas id="crsChart"></canvas>
-                </div>
-            </div>
-
-            <div class="panel-card" style="margin-top: 15px; margin-bottom: 15px;">
-                <h3 style="font-size: 15px;"><i class="fa-solid fa-share-nodes" style="color: var(--neon-blue); margin-right: 6px;"></i> REFERRAL ENGINE</h3>
-                <div class="ref-box">
-                    <div class="ref-url" id="ref-link-display">Generating link...</div>
-                    <button class="btn-action" style="padding: 8px 16px; border-radius: 10px; font-size: 12px;" onclick="copyReferral()">COPY</button>
-                </div>
-            </div>
-
-            <div class="game-grid">
-                <div class="game-card" onclick="openGame()">
-                    <i class="fa-solid fa-circle-dot"></i>
-                    <h4>LUCKY SPIN</h4>
-                </div>
-                
-                <div class="game-card" onclick="window.open('https://www.effectivecpmnetwork.com/m8xc2yn11i?key=604926233a8d991bca932695fb6912ec', '_blank')">
-                    <i class="fa-solid fa-rocket" style="color: #ffcc00;"></i>
-                    <h4 style="color: #ffcc00;">EXTRA CRS</h4>
-                </div>
-                
-                <div class="game-card" onclick="alert('Scratch Cards Launching Soon!')">
-                    <i class="fa-solid fa-ticket"></i>
-                    <h4>SCRATCH</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="content-right">
-            <div class="panel-card" style="height: fit-content;">
-                <h3 style="margin-bottom: 10px; font-size: 15px;"><i class="fa-solid fa-bolt" style="color: #00f2ff;"></i> LIVE FEED</h3>
-                <div id="activity-feed"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="game-overlay" class="overlay">
-    <div class="modal-content">
-        <h2 style="font-size: 20px;">LUCKY SPIN</h2>
-        <div style="position: relative;">
-            <div class="wheel-pointer"></div>
-            <canvas id="wheel-canvas" class="wheel-container" width="220" height="220"></canvas>
-        </div>
-        <button id="spin-btn" class="btn-action" onclick="spinWheel()">SPIN NOW</button>
-        <button class="btn-action" style="background: transparent; color: #fff; border: 1px solid #444; margin-left: 5px;" onclick="closeGame()">CLOSE</button>
-    </div>
-</div>
-
-<script>
-    let balance = parseFloat(localStorage.getItem('web_crs_balance')) || 10.00;
-    let currentUser = localStorage.getItem('web_crs_user') || "";
-
-    window.onload = function() {
-        if (currentUser) showDashboard();
-    }
-
-    function handleAuth() {
-        let email = document.getElementById('auth-email').value.trim();
-        if (email.includes("@")) {
-            localStorage.setItem('web_crs_user', email);
-            showDashboard();
-        }
-    }
-
-    function showDashboard() {
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('dashboard-screen').style.display = 'block';
-        document.getElementById('crs-balance').innerText = balance.toFixed(2);
-        initChartAndPrice();
-    }
-
-    // Chart & Price Logic
-    let crsChart;
-    function initChartAndPrice() {
-        const ctx = document.getElementById('crsChart').getContext('2d');
-        crsChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: new Array(8).fill(''), datasets: [{ data: [0.8, 0.82, 0.79, 0.83, 0.81, 0.85, 0.84, 0.83], borderColor: '#00f2ff', fill: true, backgroundColor: 'rgba(0, 242, 255, 0.05)' }] },
-            options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
-        });
-    }
-
-    // Game Logic
-    function openGame() { document.getElementById('game-overlay').style.display = 'flex'; drawWheel(); }
-    function closeGame() { document.getElementById('game-overlay').style.display = 'none'; }
-
-    const wheelCanvas = document.getElementById('wheel-canvas');
-    const wctx = wheelCanvas.getContext('2d');
-    function drawWheel() {
-        wctx.clearRect(0,0,220,220);
-        wctx.fillStyle = "#ffcc00"; wctx.beginPath(); wctx.arc(110,110,110,0,Math.PI*2); wctx.fill();
-        wctx.fillStyle = "#000"; wctx.font = "20px Arial"; wctx.fillText("SPIN", 85, 120);
-    }
-
-    function spinWheel() {
-        let win = Math.floor(Math.random() * 50) + 10;
-        balance += win;
-        localStorage.setItem('web_crs_balance', balance);
-        document.getElementById('crs-balance').innerText = balance.toFixed(2);
-        alert("You Won " + win + " CRS!");
-    }
-
-    function hourlyReward() {
-        balance += 100;
-        localStorage.setItem('web_crs_balance', balance);
-        document.getElementById('crs-balance').innerText = balance.toFixed(2);
-        alert("100 CRS Bonus added!");
-    }
-
-    function copyReferral() { alert("Link copied!"); }
-</script>
+  <footer>© 2026 CeylonRs Crypto Rewards | Powered by AAds Network</footer>
 </body>
 </html>
