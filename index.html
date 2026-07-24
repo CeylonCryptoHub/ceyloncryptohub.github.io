@@ -1,61 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="si">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CeylonRs Mining Rewards</title>
+  <title>🇱🇰 Live Crypto Tracker</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: linear-gradient(135deg, #0a0f1f, #1a2b4c);
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 30px 15px;
     }
-    header {
-      background-color: #0d1b33;
-      padding: 20px;
-      font-size: 1.5em;
-      font-weight: bold;
-      color: #00bfff;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    }
-    .content {
-      margin-top: 40px;
-    }
-    iframe {
-      border: 0;
-      width: 70%;
-      height: 250px;
-      margin: 20px auto;
-      display: block;
+    .container { width: 100%; max-width: 800px; }
+    h1 { text-align: center; color: #38bdf8; margin-bottom: 20px; font-size: 26px; }
+    
+    #searchInput {
+      width: 100%;
+      padding: 14px;
       border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,191,255,0.4);
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 20px;
+      outline: none;
     }
-    footer {
-      margin-top: 50px;
-      padding: 10px;
-      font-size: 0.9em;
-      color: #aaa;
+    #searchInput:focus { border-color: #38bdf8; }
+
+    .status-msg { text-align: center; color: #94a3b8; font-size: 16px; padding: 20px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #334155; }
+    th { background-color: #0f172a; color: #94a3b8; font-size: 14px; text-transform: uppercase; }
+    
+    .coin-cell { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+    .coin-cell img { width: 26px; height: 26px; }
+    .green { color: #4ade80; font-weight: bold; }
+    .red { color: #f87171; font-weight: bold; }
   </style>
 </head>
 <body>
-  <header>💎 CeylonRs Mining Rewards</header>
 
-  <div class="content">
-    <h2>Earn Crypto While You Play!</h2>
-    <p>Watch ads, mine coins, and get rewarded instantly.</p>
+  <div class="container">
+    <h1>🚀 Live Crypto Tracker</h1>
+    <input type="text" id="searchInput" placeholder="Crypto නම සෙවුම් කරන්න... (උදා: Bitcoin, Solana)">
+    
+    <div id="status" class="status-msg">දත්ත ලබාගනිමින් පවතී...</div>
 
-    <!-- BEGIN AADS AD UNIT 2446107 -->
-    <div id="frame">
-      <iframe data-aa='2446107' src='//acceptable.a-ads.com/2446107/?size=Adaptive'
-        style='border:0; padding:0; width:70%; height:auto; overflow:hidden; display:block; margin:auto'></iframe>
-    </div>
-    <!-- END AADS AD UNIT 2446107 -->
+    <table id="cryptoTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>Coin</th>
+          <th>මිල (USD)</th>
+          <th>පැය 24 වෙනස්වීම</th>
+          <th>Market Cap</th>
+        </tr>
+      </thead>
+      <tbody id="cryptoBody"></tbody>
+    </table>
   </div>
 
-  <footer>© 2026 CeylonRs Crypto Rewards | Powered by AAds Network</footer>
+  <script>
+    const cryptoBody = document.getElementById('cryptoBody');
+    const status = document.getElementById('status');
+    const cryptoTable = document.getElementById('cryptoTable');
+    const searchInput = document.getElementById('searchInput');
+
+    let allCoins = [];
+
+    // CoinGecko API URL එක CORS Proxy එකක් හරහා Call කිරීම (ලංකාවේ Block වීම වැළැක්වීමට)
+    const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false';
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+
+    async function loadCryptoData() {
+      try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        allCoins = await response.json();
+        
+        displayData(allCoins);
+        status.style.display = 'none';
+        cryptoTable.style.display = 'table';
+      } catch (error) {
+        console.error(error);
+        status.innerText = 'දත්ත ලබාගැනීමට නොහැකි විය. කරුණාකර Page එක Refresh කරන්න.';
+      }
+    }
+
+    function displayData(coins) {
+      cryptoBody.innerHTML = '';
+      coins.forEach(coin => {
+        const isPositive = coin.price_change_percentage_24h >= 0;
+        const changeClass = isPositive ? 'green' : 'red';
+        const changeSign = isPositive ? '+' : '';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="coin-cell">
+            <img src="${coin.image}" alt="${coin.name}">
+            <span>${coin.name} <small style="color:#64748b">(${coin.symbol.toUpperCase()})</small></span>
+          </td>
+          <td>$${coin.current_price.toLocaleString()}</td>
+          <td class="${changeClass}">${changeSign}${coin.price_change_percentage_24h.toFixed(2)}%</td>
+          <td>$${coin.market_cap.toLocaleString()}</td>
+        `;
+        cryptoBody.appendChild(row);
+      });
+    }
+
+    // Live Search Feature
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      const filtered = allCoins.filter(c => 
+        c.name.toLowerCase().includes(term) || 
+        c.symbol.toLowerCase().includes(term)
+      );
+      displayData(filtered);
+    });
+
+    // Page එක Load වෙද්දී Execute වීම
+    loadCryptoData();
+  </script>
+
 </body>
 </html>
