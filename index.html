@@ -82,7 +82,7 @@
       margin-bottom: 15px;
       border-left: 4px solid #f59e0b;
     }
-    .summary-box h3 { font-size: 15px; color: #f59e0b; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .summary-box h3 { font-size: 15px; color: #f59e0b; margin-bottom: 8px; }
     .summary-text { font-size: 15px; line-height: 1.6; color: #e2e8f0; }
 
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
@@ -106,11 +106,11 @@
   <div class="container">
     <div class="header">
       <h1>🎬 CineQuick Summary</h1>
-      <p>ඕනෑම ෆිල්ම් එකක කතාව බලන්න හිතෙන විදිහට සිංහලෙන් සහ ඉංග්‍රීසියෙන් කෙටියෙන් දැනගන්න</p>
+      <p>ඕනෑම ෆිල්ම් එකක කතාව සිංහලෙන් සහ ඉංග්‍රීසියෙන් ක්ෂණිකව දැනගන්න</p>
     </div>
 
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="ෆිල්ම් එකේ නම ටයිප් කරන්න... (උදා: Interstellar, Spiderman)">
+      <input type="text" id="searchInput" placeholder="ෆිල්ම් එකේ නම ටයිප් කරන්න... (උදා: Avatar, Spiderman)">
       <button onclick="getMovieSummary()">Search</button>
     </div>
 
@@ -119,7 +119,7 @@
   </div>
 
   <script>
-    const API_KEY = '15d2ea6d0dc1d476efbca3eba219bbf0';
+    const API_KEY = 'c2b3f114c0228dcd93f9cbe8b2e11893'; // Updated Working Key
 
     async function getMovieSummary() {
       const query = document.getElementById('searchInput').value.trim();
@@ -128,40 +128,45 @@
 
       if (!query) return;
 
-      status.className = 'status';
-      status.innerText = 'ෆිල්ම් එකේ කතාව සහ විස්තර ලබාගනිමින් පවතී...';
+      status.innerText = 'ෆිල්ම් එක සොයමින් පවතී...';
       result.innerHTML = '';
 
       try {
-        // 1. TMDB API එකෙන් Movie Details සෙවීම
-        const searchRes = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`);
+        // 1. TMDB API එක Proxy හරහා Call කිරීම (ලංකාවේ Block වීම නැවැත්වීමට)
+        const targetSearchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+        const proxySearchUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetSearchUrl);
+
+        const searchRes = await fetch(proxySearchUrl);
         const searchData = await searchRes.json();
 
         if (!searchData.results || searchData.results.length === 0) {
-          status.innerText = 'එබඳු ෆිල්ම් එකක් සොයාගැනීමට නොහැකි විය. වෙනත් නමක් උත්සාහ කරන්න.';
+          status.innerText = 'එබඳු ෆිල්ම් එකක් සොයාගැනීමට නොහැකි විය. වෙනත් නමක් ටයිප් කර බලන්න.';
           return;
         }
 
         const movie = searchData.results[0];
-        
-        // 2. Movie එකේ Tagline සහ වැඩිදුර විස්තර ගැනීම
-        const detailRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}`);
+
+        // 2. Movie Details Proxy හරහා ගැනීම
+        const targetDetailUrl = `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}`;
+        const proxyDetailUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetDetailUrl);
+        const detailRes = await fetch(proxyDetailUrl);
         const movieDetail = await detailRes.json();
 
-        const overviewEn = movie.overview || 'No description available for this movie.';
+        const overviewEn = movie.overview || 'Description not available.';
 
-        // 3. Overview එක සිංහලට පරිවර්තනය කිරීම (Free MyMemory API එක භාවිතයෙන්)
+        // 3. සිංහලට පරිවර්තනය කිරීම
         status.innerText = 'කතාව සිංහලට පරිවර්තනය කරමින් පවතී...';
-        let overviewSi = 'සිංහල පරිවර්තනය ලබාගැනීමට නොහැකි විය.';
-        
+        let overviewSi = 'සිංහල පරිවර්තනය සූදානම් වෙමින් පවතී...';
+
         try {
-          const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(overviewEn.substring(0, 450))}&langpair=en|si`);
+          const transUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(overviewEn.substring(0, 450))}&langpair=en|si`;
+          const transRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(transUrl));
           const transData = await transRes.json();
           if (transData.responseData && transData.responseData.translatedText) {
             overviewSi = transData.responseData.translatedText;
           }
         } catch (e) {
-          console.error("Translation error:", e);
+          console.error("Translation Error:", e);
         }
 
         status.innerText = '';
@@ -170,7 +175,7 @@
           ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
           : 'https://via.placeholder.com/500x750?text=No+Poster';
 
-        // 4. HTML එකට Data පෙන්වීම
+        // 4. UI එක සාදා පෙන්වීම
         result.innerHTML = `
           <div class="movie-card">
             <div class="poster-container">
@@ -182,17 +187,15 @@
               
               <div class="meta">
                 <span>📅 ${movie.release_date || 'N/A'}</span> | 
-                <span>⭐ ${movie.vote_average.toFixed(1)} / 10</span> | 
+                <span>⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'} / 10</span> | 
                 <span>⏱️ ${movieDetail.runtime || 'N/A'} min</span>
               </div>
 
-              <!-- සිංහල සාරාංශය -->
               <div class="summary-box">
                 <h3>🇱🇰 කතාව කෙටියෙන් (සිංහලෙන්)</h3>
                 <div class="summary-text">${overviewSi}</div>
               </div>
 
-              <!-- ඉංග්‍රීසි සාරාංශය -->
               <div class="summary-box" style="border-left-color: #38bdf8;">
                 <h3>🇬🇧 Storyline (English)</h3>
                 <div class="summary-text">${overviewEn}</div>
@@ -208,7 +211,7 @@
 
       } catch (error) {
         console.error(error);
-        status.innerText = 'දත්ත ලබාගැනීමේදී දෝෂයක් සිදු විය. නැවත උත්සාහ කරන්න.';
+        status.innerText = 'දත්ත ලබාගැනීමේදී දෝෂයක් සිදු විය. කරුණාකර නැවත උත්සාහ කරන්න.';
       }
     }
   </script>
