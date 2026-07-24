@@ -3,134 +3,214 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🇱🇰 Live Crypto Tracker</title>
+  <title>🎬 CineQuick - Movie Summary Generator</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #0f172a;
-      color: #f8fafc;
+      background-color: #0b0f19;
+      color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 30px 15px;
       display: flex;
       justify-content: center;
-      padding: 30px 15px;
     }
-    .container { width: 100%; max-width: 800px; }
-    h1 { text-align: center; color: #38bdf8; margin-bottom: 20px; font-size: 26px; }
+    .container { width: 100%; max-width: 850px; }
     
-    #searchInput {
-      width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid #334155;
+    .header { text-align: center; margin-bottom: 25px; }
+    .header h1 { color: #f59e0b; font-size: 30px; margin-bottom: 8px; }
+    .header p { color: #94a3b8; font-size: 15px; }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
       background: #1e293b;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+    input {
+      flex: 1;
+      padding: 12px 15px;
+      border: none;
+      background: transparent;
       color: #fff;
       font-size: 16px;
-      margin-bottom: 20px;
       outline: none;
     }
-    #searchInput:focus { border-color: #38bdf8; }
-
-    .status-msg { text-align: center; color: #94a3b8; font-size: 16px; padding: 20px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1e293b;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      background: #f59e0b;
+      color: #0f172a;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
     }
-    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #334155; }
-    th { background-color: #0f172a; color: #94a3b8; font-size: 14px; text-transform: uppercase; }
+    button:hover { background: #d97706; }
+
+    .status { text-align: center; color: #94a3b8; font-size: 16px; margin: 20px 0; }
+
+    .movie-card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid #334155;
+    }
+    @media (min-width: 650px) {
+      .movie-card { flex-direction: row; }
+    }
     
-    .coin-cell { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-    .coin-cell img { width: 26px; height: 26px; }
-    .green { color: #4ade80; font-weight: bold; }
-    .red { color: #f87171; font-weight: bold; }
+    .poster-container { text-align: center; }
+    .poster { width: 220px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    
+    .details { flex: 1; }
+    .title { font-size: 26px; font-weight: bold; color: #38bdf8; margin-bottom: 6px; }
+    .tagline { font-style: italic; color: #f59e0b; font-size: 14px; margin-bottom: 12px; }
+    .meta { font-size: 14px; color: #94a3b8; margin-bottom: 20px; }
+
+    .summary-box {
+      background: #0f172a;
+      padding: 18px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border-left: 4px solid #f59e0b;
+    }
+    .summary-box h3 { font-size: 15px; color: #f59e0b; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .summary-text { font-size: 15px; line-height: 1.6; color: #e2e8f0; }
+
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+    .btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-yt { background: #dc2626; }
+    .btn-google { background: #2563eb; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>🚀 Live Crypto Tracker</h1>
-    <input type="text" id="searchInput" placeholder="Crypto නම සෙවුම් කරන්න... (උදා: Bitcoin, Solana)">
-    
-    <div id="status" class="status-msg">දත්ත ලබාගනිමින් පවතී...</div>
+    <div class="header">
+      <h1>🎬 CineQuick Summary</h1>
+      <p>ඕනෑම ෆිල්ම් එකක කතාව බලන්න හිතෙන විදිහට සිංහලෙන් සහ ඉංග්‍රීසියෙන් කෙටියෙන් දැනගන්න</p>
+    </div>
 
-    <table id="cryptoTable" style="display: none;">
-      <thead>
-        <tr>
-          <th>Coin</th>
-          <th>මිල (USD)</th>
-          <th>පැය 24 වෙනස්වීම</th>
-          <th>Market Cap</th>
-        </tr>
-      </thead>
-      <tbody id="cryptoBody"></tbody>
-    </table>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="ෆිල්ම් එකේ නම ටයිප් කරන්න... (උදා: Interstellar, Spiderman)">
+      <button onclick="getMovieSummary()">Search</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="result"></div>
   </div>
 
   <script>
-    const cryptoBody = document.getElementById('cryptoBody');
-    const status = document.getElementById('status');
-    const cryptoTable = document.getElementById('cryptoTable');
-    const searchInput = document.getElementById('searchInput');
+    const API_KEY = '15d2ea6d0dc1d476efbca3eba219bbf0';
 
-    let allCoins = [];
+    async function getMovieSummary() {
+      const query = document.getElementById('searchInput').value.trim();
+      const status = document.getElementById('status');
+      const result = document.getElementById('result');
 
-    // CoinGecko API URL එක CORS Proxy එකක් හරහා Call කිරීම (ලංකාවේ Block වීම වැළැක්වීමට)
-    const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false';
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+      if (!query) return;
 
-    async function loadCryptoData() {
+      status.className = 'status';
+      status.innerText = 'ෆිල්ම් එකේ කතාව සහ විස්තර ලබාගනිමින් පවතී...';
+      result.innerHTML = '';
+
       try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
+        // 1. TMDB API එකෙන් Movie Details සෙවීම
+        const searchRes = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`);
+        const searchData = await searchRes.json();
+
+        if (!searchData.results || searchData.results.length === 0) {
+          status.innerText = 'එබඳු ෆිල්ම් එකක් සොයාගැනීමට නොහැකි විය. වෙනත් නමක් උත්සාහ කරන්න.';
+          return;
+        }
+
+        const movie = searchData.results[0];
         
-        allCoins = await response.json();
+        // 2. Movie එකේ Tagline සහ වැඩිදුර විස්තර ගැනීම
+        const detailRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}`);
+        const movieDetail = await detailRes.json();
+
+        const overviewEn = movie.overview || 'No description available for this movie.';
+
+        // 3. Overview එක සිංහලට පරිවර්තනය කිරීම (Free MyMemory API එක භාවිතයෙන්)
+        status.innerText = 'කතාව සිංහලට පරිවර්තනය කරමින් පවතී...';
+        let overviewSi = 'සිංහල පරිවර්තනය ලබාගැනීමට නොහැකි විය.';
         
-        displayData(allCoins);
-        status.style.display = 'none';
-        cryptoTable.style.display = 'table';
+        try {
+          const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(overviewEn.substring(0, 450))}&langpair=en|si`);
+          const transData = await transRes.json();
+          if (transData.responseData && transData.responseData.translatedText) {
+            overviewSi = transData.responseData.translatedText;
+          }
+        } catch (e) {
+          console.error("Translation error:", e);
+        }
+
+        status.innerText = '';
+
+        const posterPath = movie.poster_path 
+          ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
+          : 'https://via.placeholder.com/500x750?text=No+Poster';
+
+        // 4. HTML එකට Data පෙන්වීම
+        result.innerHTML = `
+          <div class="movie-card">
+            <div class="poster-container">
+              <img class="poster" src="${posterPath}" alt="${movie.title}">
+            </div>
+            <div class="details">
+              <div class="title">${movie.title}</div>
+              ${movieDetail.tagline ? `<div class="tagline">"${movieDetail.tagline}"</div>` : ''}
+              
+              <div class="meta">
+                <span>📅 ${movie.release_date || 'N/A'}</span> | 
+                <span>⭐ ${movie.vote_average.toFixed(1)} / 10</span> | 
+                <span>⏱️ ${movieDetail.runtime || 'N/A'} min</span>
+              </div>
+
+              <!-- සිංහල සාරාංශය -->
+              <div class="summary-box">
+                <h3>🇱🇰 කතාව කෙටියෙන් (සිංහලෙන්)</h3>
+                <div class="summary-text">${overviewSi}</div>
+              </div>
+
+              <!-- ඉංග්‍රීසි සාරාංශය -->
+              <div class="summary-box" style="border-left-color: #38bdf8;">
+                <h3>🇬🇧 Storyline (English)</h3>
+                <div class="summary-text">${overviewEn}</div>
+              </div>
+
+              <div class="btn-group">
+                <a class="btn btn-yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' official trailer')}" target="_blank">▶ Official Trailer</a>
+                <a class="btn btn-google" href="https://www.google.com/search?q=${encodeURIComponent(movie.title + ' movie review')}" target="_blank">🔍 Reviews & Details</a>
+              </div>
+            </div>
+          </div>
+        `;
+
       } catch (error) {
         console.error(error);
-        status.innerText = 'දත්ත ලබාගැනීමට නොහැකි විය. කරුණාකර Page එක Refresh කරන්න.';
+        status.innerText = 'දත්ත ලබාගැනීමේදී දෝෂයක් සිදු විය. නැවත උත්සාහ කරන්න.';
       }
     }
-
-    function displayData(coins) {
-      cryptoBody.innerHTML = '';
-      coins.forEach(coin => {
-        const isPositive = coin.price_change_percentage_24h >= 0;
-        const changeClass = isPositive ? 'green' : 'red';
-        const changeSign = isPositive ? '+' : '';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="coin-cell">
-            <img src="${coin.image}" alt="${coin.name}">
-            <span>${coin.name} <small style="color:#64748b">(${coin.symbol.toUpperCase()})</small></span>
-          </td>
-          <td>$${coin.current_price.toLocaleString()}</td>
-          <td class="${changeClass}">${changeSign}${coin.price_change_percentage_24h.toFixed(2)}%</td>
-          <td>$${coin.market_cap.toLocaleString()}</td>
-        `;
-        cryptoBody.appendChild(row);
-      });
-    }
-
-    // Live Search Feature
-    searchInput.addEventListener('input', (e) => {
-      const term = e.target.value.toLowerCase();
-      const filtered = allCoins.filter(c => 
-        c.name.toLowerCase().includes(term) || 
-        c.symbol.toLowerCase().includes(term)
-      );
-      displayData(filtered);
-    });
-
-    // Page එක Load වෙද්දී Execute වීම
-    loadCryptoData();
   </script>
 
 </body>
