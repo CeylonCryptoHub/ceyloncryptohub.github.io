@@ -1,247 +1,164 @@
-<!DOCTYPE html>
-<html lang="si">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ශ්‍රී ලංකා කාලගුණ සිතියම | Zoom Earth වගේ</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0a1628; color: #fff; height: 100vh; overflow: hidden; }
-    
-    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
-    
-    .top-bar {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
-      padding: 12px 12px 30px;
-    }
-    .top-bar h1 { font-size: 1.1rem; font-weight: 600; }
-    .top-bar p { font-size: 0.8rem; opacity: 0.85; }
-    
-    .search-box {
-      position: absolute; top: 70px; left: 12px; right: 12px; z-index: 1000;
-      max-width: 400px;
-    }
-    #search-input {
-      width: 100%; padding: 12px 16px; font-size: 1rem;
-      border: none; border-radius: 12px;
-      background: rgba(255,255,255,0.95); color: #111;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
-    .search-results {
-      background: white; color: #111; border-radius: 0 0 12px 12px;
-      max-height: 250px; overflow-y: auto; display: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-    }
-    .search-item { padding: 10px 14px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 0.95rem; }
-    .search-item:active { background: #e3f2fd; }
-    
-    .bottom-panel {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
-      background: rgba(10,22,40,0.92); backdrop-filter: blur(10px);
-      border-radius: 20px 20px 0 0; padding: 16px;
-      max-height: 45vh; overflow-y: auto;
-      box-shadow: 0 -4px 30px rgba(0,0,0,0.4);
-    }
-    .bottom-panel h2 { font-size: 1rem; margin-bottom: 8px; color: #90caf9; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .info-item {
-      background: rgba(255,255,255,0.08); padding: 10px; border-radius: 10px;
-      font-size: 0.9rem;
-    }
-    .info-item strong { display: block; font-size: 1.15rem; color: #fff; }
-    .rain { color: #64b5f6; }
-    .btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
-    .btn {
-      flex: 1; padding: 10px; border: none; border-radius: 10px;
-      font-size: 0.9rem; font-weight: 600; cursor: pointer;
-    }
-    .btn-loc { background: #2e7d32; color: white; }
-    .btn-close { background: rgba(255,255,255,0.15); color: white; }
-    .hourly { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
-    .hour-card {
-      min-width: 70px; background: rgba(255,255,255,0.08);
-      padding: 8px; border-radius: 10px; text-align: center; font-size: 0.8rem;
-    }
-    .warning {
-      background: rgba(239,108,0,0.25); border-left: 4px solid #ef6c00;
-      padding: 8px 12px; border-radius: 8px; margin-top: 8px; font-size: 0.85rem;
-    }
-    .layer-btns {
-      position: absolute; top: 130px; right: 12px; z-index: 1000;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .layer-btn {
-      background: rgba(0,0,0,0.7); color: white; border: 1px solid rgba(255,255,255,0.2);
-      padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
-    }
-    .layer-btn.active { background: #1565c0; border-color: #1565c0; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>∞ Infinity Grid Bot — Live Server</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#090c14; color:#eef1f8; font-family:'Segoe UI',system-ui,sans-serif; padding:24px; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .sub { color:#8b95b0; font-size:13px; margin-bottom:24px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+  .card { background:#131a2b; border:1px solid #232c44; border-radius:12px; padding:16px; }
+  .card .label { font-size:11px; color:#8b95b0; margin-bottom:6px; }
+  .card .value { font-size:20px; font-weight:700; font-family:monospace; }
+  .green { color:#2ebd85; } .red { color:#f6465d; }
+  .panel { background:#131a2b; border:1px solid #232c44; border-radius:12px; padding:18px; margin-bottom:20px; }
+  input, button { font-family:inherit; font-size:14px; }
+  input { background:#0d1220; border:1px solid #232c44; color:#eef1f8; padding:10px; border-radius:8px; width:100%; margin-bottom:10px; }
+  label { font-size:12px; color:#8b95b0; display:block; margin-bottom:4px; }
+  button { background:#4f7cff; border:none; color:#fff; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600; }
+  button.danger { background:#f6465d; }
+  .status-pill { display:inline-block; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+  .status-pill.RUNNING { background:rgba(46,189,133,0.15); color:#2ebd85; }
+  .status-pill.STOPPED { background:rgba(246,70,93,0.15); color:#f6465d; }
+  table { width:100%; border-collapse:collapse; font-family:monospace; font-size:12px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #1c2338; }
+  th { color:#8b95b0; font-weight:500; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  #err { color:#f6465d; font-size:13px; margin-bottom:10px; }
+</style>
 </head>
 <body>
-  <div id="map"></div>
+  <h1>∞ Infinity Grid Bot</h1>
+  <div class="sub" id="server-note">Connecting to server…</div>
 
-  <div class="top-bar">
-    <h1>ශ්‍රී ලංකා කාලගුණ සිතියම</h1>
-    <p>Radar + Satellite වගේ දසුන • Zoom Earth විලාසය</p>
-  </div>
+  <div id="app"></div>
 
-  <div class="search-box">
-    <input type="text" id="search-input" placeholder="නගරය / ගම සොයන්න..." autocomplete="off">
-    <div id="search-results" class="search-results"></div>
-  </div>
+<script>
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
 
-  <div class="layer-btns">
-    <button class="layer-btn active" onclick="toggleRadar(this)">Radar</button>
-  </div>
+function fmt(n, d) {
+  d = d === undefined ? 2 : d;
+  const v = Number(n);
+  if (!isFinite(v)) return '0.00';
+  return v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
 
-  <div class="bottom-panel" id="panel">
-    <div class="btn-row">
-      <button class="btn btn-loc" onclick="getMyLocation()">📍 මගේ ස්ථානය</button>
-      <button class="btn btn-close" onclick="document.getElementById('panel').style.display='none'">වසන්න</button>
+function renderCreateForm() {
+  return \`
+    <div class="panel">
+      <h3 style="margin-bottom:14px">Create Bot (paper trading)</h3>
+      <div id="err"></div>
+      <label>Trading Pair (e.g. BTC-USDT)</label>
+      <input id="f-pair" value="BTC-USDT" />
+      <div class="form-row">
+        <div>
+          <label>Investment (USDT)</label>
+          <input id="f-inv" type="number" value="1000" />
+        </div>
+        <div>
+          <label>Lowest Price (stop below this)</label>
+          <input id="f-low" type="number" value="" />
+        </div>
+      </div>
+      <label>Grid Step (%)</label>
+      <input id="f-grid" type="number" value="1.5" step="0.1" />
+      <button onclick="createBot()">Create Bot</button>
     </div>
-    <h2 id="place-name">මහනුවර</h2>
-    <div class="info-grid" id="current-info">
-      <div class="info-item">උෂ්ණත්වය<strong>--</strong></div>
-      <div class="info-item">වැස්ස<strong class="rain">--</strong></div>
-      <div class="info-item">වලාකුළු<strong>--</strong></div>
-      <div class="info-item">සුළං<strong>--</strong></div>
+  \`;
+}
+
+async function createBot() {
+  const errEl = document.getElementById('err');
+  errEl.textContent = '';
+  try {
+    await api('/api/bot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pair: document.getElementById('f-pair').value,
+        investment: document.getElementById('f-inv').value,
+        lowestPrice: document.getElementById('f-low').value,
+        gridPct: document.getElementById('f-grid').value
+      })
+    });
+    refresh();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+async function deleteBot() {
+  if (!confirm('Delete this bot? This cannot be undone.')) return;
+  await api('/api/bot', { method: 'DELETE' });
+  refresh();
+}
+
+function renderDashboard(bot) {
+  const price = bot.lastPrice;
+  const tv = bot.totalValue, tp = bot.totalProfit, upnl = bot.unrealizedPnl;
+  const pctReturn = (tp / bot.investment) * 100;
+  const rows = bot.history.slice(-15).reverse().map(h => \`
+    <tr>
+      <td>\${h.time.slice(0,19).replace('T',' ')}</td>
+      <td>\${h.action}</td>
+      <td>\${h.price ? '$'+fmt(h.price,4) : '—'}</td>
+      <td>\${h.amount ? fmt(h.amount,6) : '—'}</td>
+      <td class="\${h.gridProfit>=0?'green':'red'}">\${fmt(h.gridProfit,4)}</td>
+    </tr>\`).join('');
+
+  return \`
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div>
+          <span style="font-size:18px;font-weight:700">\${bot.pair}</span>
+          <span class="status-pill \${bot.status.startsWith('STOPPED')?'STOPPED':'RUNNING'}">\${bot.status}</span>
+        </div>
+        <button class="danger" onclick="deleteBot()">Delete Bot</button>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="label">Current Price</div><div class="value">$\${fmt(price,4)}</div></div>
+        <div class="card"><div class="label">Total Value</div><div class="value">$\${fmt(tv)}</div></div>
+        <div class="card"><div class="label">Total Profit</div><div class="value \${tp>=0?'green':'red'}">\${tp>=0?'+':''}\${fmt(tp)} (\${fmt(pctReturn)}%)</div></div>
+        <div class="card"><div class="label">Grid Profit (realized)</div><div class="value green">+\${fmt(bot.gridProfit,4)}</div></div>
+        <div class="card"><div class="label">Unrealized P&L</div><div class="value \${upnl>=0?'green':'red'}">\${fmt(upnl,4)}</div></div>
+        <div class="card"><div class="label">Trades</div><div class="value">\${bot.tradeCount}</div></div>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="label">Next SELL</div><div class="value green">\${bot.nextTriggers.sellPrice ? '$'+fmt(bot.nextTriggers.sellPrice,4) : '—'}</div></div>
+        <div class="card"><div class="label">Next BUY</div><div class="value red">\${bot.nextTriggers.hasUsdt ? (bot.nextTriggers.buyPrice ? '$'+fmt(bot.nextTriggers.buyPrice,4) : '—') : 'No USDT left'}</div></div>
+      </div>
     </div>
-    <div id="warning-box"></div>
-    <h2>ඉදිරි පැය 8</h2>
-    <div class="hourly" id="hourly"></div>
-  </div>
+    <div class="panel">
+      <h3 style="margin-bottom:12px">Recent Trades</h3>
+      <table>
+        <thead><tr><th>Time</th><th>Action</th><th>Price</th><th>Amount</th><th>Grid Profit</th></tr></thead>
+        <tbody>\${rows || '<tr><td colspan="5">No trades yet</td></tr>'}</tbody>
+      </table>
+    </div>
+  \`;
+}
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const weatherCodes = {0:"පැහැදිලි",1:"බොහෝ විට පැහැදිලි",2:"කොටසක් වලාකුළු",3:"වලාකුළු",45:"මීදුම",61:"සැහැල්ලු වැස්ස",63:"වැස්ස",65:"තද වැස්ස",80:"වැසි කුණාටු",95:"ගිගුරුම්"};
-    
-    let map, radarLayer, marker;
-    let radarOn = true;
+async function refresh() {
+  try {
+    const { bot } = await api('/api/bot');
+    document.getElementById('server-note').textContent =
+      'Server-side bot — keeps trading even if you close this page, as long as the server process is running.';
+    document.getElementById('app').innerHTML = bot ? renderDashboard(bot) : renderCreateForm();
+  } catch (e) {
+    document.getElementById('server-note').textContent = 'Could not reach server: ' + e.message;
+  }
+}
 
-    // Map init - Sri Lanka centered
-    map = L.map('map', { zoomControl: false }).setView([7.8, 80.7], 8);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap, © CARTO'
-    }).addTo(map);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    // Radar
-    function loadRadar() {
-      fetch('https://api.rainviewer.com/public/weather-maps.json')
-        .then(r => r.json())
-        .then(data => {
-          const frames = data.radar.past;
-          const last = frames[frames.length - 1];
-          if (last) {
-            if (radarLayer) map.removeLayer(radarLayer);
-            radarLayer = L.tileLayer(data.host + last.path + '/256/{z}/{x}/{y}/2/1_1.png', {
-              opacity: 0.65, zIndex: 10
-            }).addTo(map);
-          }
-        });
-    }
-    loadRadar();
-    setInterval(loadRadar, 5 * 60 * 1000); // every 5 min
-
-    function toggleRadar(btn) {
-      radarOn = !radarOn;
-      if (radarOn) {
-        loadRadar();
-        btn.classList.add('active');
-      } else {
-        if (radarLayer) map.removeLayer(radarLayer);
-        btn.classList.remove('active');
-      }
-    }
-
-    function loadWeather(lat, lon, name) {
-      document.getElementById('place-name').textContent = name;
-      document.getElementById('panel').style.display = 'block';
-
-      if (marker) map.removeLayer(marker);
-      marker = L.marker([lat, lon]).addTo(map);
-      map.setView([lat, lon], 10);
-
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=\( {lat}&longitude= \){lon}&current=temperature_2m,precipitation,weather_code,wind_speed_10m,cloud_cover&hourly=precipitation,precipitation_probability,temperature_2m&timezone=Asia%2FColombo`;
-      
-      fetch(url).then(r => r.json()).then(data => {
-        const c = data.current;
-        document.getElementById('current-info').innerHTML = `
-          <div class="info-item">උෂ්ණත්වය<strong>${c.temperature_2m}°C</strong></div>
-          <div class="info-item">වැස්ස<strong class="rain">${c.precipitation} mm</strong></div>
-          <div class="info-item">වලාකුළු<strong>${c.cloud_cover}%</strong></div>
-          <div class="info-item">සුළං<strong>${c.wind_speed_10m} km/h</strong></div>
-        `;
-        
-        let warn = '';
-        if (c.precipitation >= 2 || data.hourly.precipitation[0] >= 2) {
-          warn = `<div class="warning">⚠️ වැස්ස වැඩි විය හැක. ප්‍රවේශම් වන්න.</div>`;
-        }
-        document.getElementById('warning-box').innerHTML = warn;
-
-        let h = '';
-        for (let i = 0; i < 8; i++) {
-          const t = data.hourly.time[i].split('T')[1].slice(0,5);
-          h += `<div class="hour-card"><div>\( {t}</div><div class="rain"> \){data.hourly.precipitation[i]}mm</div><div>${data.hourly.temperature_2m[i]}°</div></div>`;
-        }
-        document.getElementById('hourly').innerHTML = h;
-      });
-    }
-
-    // Location
-    function getMyLocation() {
-      if (!navigator.geolocation) return alert('Location සහාය නොදෙයි');
-      navigator.geolocation.getCurrentPosition(pos => {
-        loadWeather(pos.coords.latitude, pos.coords.longitude, 'ඔබේ ස්ථානය');
-      }, () => alert('Location ඉඩ දෙන්න'));
-    }
-
-    // Search
-    const input = document.getElementById('search-input');
-    const resultsBox = document.getElementById('search-results');
-    let timeout;
-    input.addEventListener('input', () => {
-      clearTimeout(timeout);
-      const q = input.value.trim();
-      if (q.length < 2) { resultsBox.style.display = 'none'; return; }
-      timeout = setTimeout(() => search(q), 400);
-    });
-
-    async function search(q) {
-      resultsBox.innerHTML = '<div class="search-item">සොයමින්...</div>';
-      resultsBox.style.display = 'block';
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=lk&format=json&limit=10`, {
-          headers: { 'User-Agent': 'LankaWeatherMap/1.0', 'Accept-Language': 'si,en' }
-        });
-        const data = await res.json();
-        if (!data.length) {
-          resultsBox.innerHTML = '<div class="search-item">ප්‍රතිඵල නැත</div>';
-          return;
-        }
-        resultsBox.innerHTML = data.map(i => {
-          const name = i.display_name.split(',')[0];
-          return `<div class="search-item" onclick="select(\( {i.lat}, \){i.lon},'\( {name.replace(/'/g,"\\'")}')"> \){name}<br><small style="color:#666">${i.display_name}</small></div>`;
-        }).join('');
-      } catch(e) {
-        resultsBox.innerHTML = '<div class="search-item">දෝෂයක්</div>';
-      }
-    }
-
-    function select(lat, lon, name) {
-      input.value = name;
-      resultsBox.style.display = 'none';
-      loadWeather(lat, lon, name);
-    }
-
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.search-box')) resultsBox.style.display = 'none';
-    });
-
-    // Start with Kandy
-    loadWeather(7.2906, 80.6337, 'මහනුවර');
-  </script>
+refresh();
+setInterval(refresh, 1000);
+</script>
 </body>
 </html>
