@@ -1,0 +1,2497 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>∞ Infinity Grid Paper Trading Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      :root {
+        --bg: #090c14;
+        --bg-elev: #0d1220;
+        --panel: #131a2b;
+        --panel-2: #161e33;
+        --border: #232c44;
+        --border-soft: #1c2338;
+        --text: #eef1f8;
+        --muted: #8b95b0;
+        --accent: #4f7cff;
+        --accent-2: #7c5cff;
+        --green: #2ebd85;
+        --red: #f6465d;
+        --yellow: #f0b90b;
+        --radius: 14px;
+        --sidebar-w: 252px;
+        --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      body {
+        font-family: 'Inter', system-ui, -apple-system, Avenir, Helvetica, Arial, sans-serif;
+        background:
+          radial-gradient(900px 480px at 15% -10%, rgba(79,124,255,0.10), transparent 60%),
+          radial-gradient(700px 420px at 100% 0%, rgba(124,92,255,0.08), transparent 55%),
+          var(--bg);
+        background-attachment: fixed;
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+      }
+
+      ::selection { background: rgba(79,124,255,0.35); }
+      *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+      .mono, .metric-value, .coin-price, .info-row .val, table, .log-box, .chart-label { font-family: var(--mono); }
+
+      /* ===== SIDEBAR ===== */
+      #sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        width: var(--sidebar-w);
+        height: 100vh;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        transition: transform 0.3s ease;
+        padding-top: var(--safe-top);
+      }
+
+      .sidebar-logo {
+        padding: 24px 20px;
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sidebar-logo span {
+        font-size: 24px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 10px rgba(79,124,255,0.35));
+      }
+
+      .nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px 20px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 14px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        text-align: left;
+      }
+      .nav-btn:hover { background: rgba(79, 124, 255, 0.08); color: var(--text); }
+      .nav-btn.active { background: rgba(79, 124, 255, 0.15); color: var(--accent); border-right: 3px solid var(--accent); }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 16px 20px;
+        font-size: 11px;
+        color: var(--muted);
+        border-top: 1px solid var(--border);
+        line-height: 1.4;
+      }
+
+      /* ===== MAIN ===== */
+      #main {
+        margin-left: var(--sidebar-w);
+        padding: 28px 32px;
+        min-height: 100vh;
+        transition: margin 0.3s;
+      }
+
+      /* ===== MOBILE TOPBAR ===== */
+      #mobile-topbar {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 150;
+        padding: calc(var(--safe-top) + 10px) 14px 10px 62px;
+        background: rgba(9,12,20,0.82);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border-soft);
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      #mobile-topbar .mt-title { font-size: 15px; font-weight: 700; letter-spacing: -0.1px; }
+
+      /* ===== HAMBURGER ===== */
+      #hamburger {
+        display: none;
+        position: fixed;
+        top: calc(var(--safe-top) + 10px); left: 14px;
+        z-index: 200;
+        width: 38px; height: 38px;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-size: 18px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      }
+
+      #overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(2px);
+        z-index: 99;
+      }
+
+      /* ===== PAGES ===== */
+      .page { display: none; animation: fadeIn 0.3s ease; }
+      .page.active { display: block; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* ===== CARDS / PANELS ===== */
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .metric-card {
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      }
+      .metric-card:hover { border-color: rgba(79,124,255,0.4); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+
+      .metric-label { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.3px; }
+      .metric-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.2px; }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+      }
+      .panel-title { font-size: 14.5px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.1px; }
+
+      /* ===== NEXT GRID LEVELS ===== */
+      .trigger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .trigger-card {
+        border-radius: 12px;
+        padding: 16px 18px;
+        border: 1px solid var(--border-soft);
+        position: relative;
+        overflow: hidden;
+      }
+      .trigger-card.sell { background: linear-gradient(135deg, rgba(46,189,133,0.10), rgba(46,189,133,0.02)); border-color: rgba(46,189,133,0.25); }
+      .trigger-card.buy { background: linear-gradient(135deg, rgba(246,70,93,0.10), rgba(246,70,93,0.02)); border-color: rgba(246,70,93,0.25); }
+      .trigger-card .tc-label { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+      .trigger-card .tc-price { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+      .trigger-card .tc-dist { font-size: 12.5px; font-weight: 600; }
+      .trigger-card.sell .tc-dist { color: var(--green); }
+      .trigger-card.buy .tc-dist { color: var(--red); }
+      .trigger-card .tc-dot { width: 7px; height: 7px; border-radius: 50%; }
+      .trigger-card.sell .tc-dot { background: var(--green); }
+      .trigger-card.buy .tc-dot { background: var(--red); }
+
+      /* ===== PRICE CHANGE ANIMATION ===== */
+      @keyframes tcPop {
+        0% { transform: scale(1); filter: brightness(1); }
+        35% { transform: scale(1.12); filter: brightness(1.75); }
+        100% { transform: scale(1); filter: brightness(1); }
+      }
+      @keyframes tcGlowSell {
+        0% { box-shadow: 0 0 0 0 rgba(46,189,133,0); }
+        30% { box-shadow: 0 0 24px 1px rgba(46,189,133,0.5); }
+        100% { box-shadow: 0 0 0 0 rgba(46,189,133,0); }
+      }
+      @keyframes tcGlowBuy {
+        0% { box-shadow: 0 0 0 0 rgba(246,70,93,0); }
+        30% { box-shadow: 0 0 24px 1px rgba(246,70,93,0.5); }
+        100% { box-shadow: 0 0 0 0 rgba(246,70,93,0); }
+      }
+      .trigger-card .tc-price.changed { animation: tcPop 0.45s ease; transform-origin: left center; }
+      .trigger-card .tc-dist.changed { animation: tcPop 0.45s ease; transform-origin: left center; }
+      .trigger-card.sell.changed-card { animation: tcGlowSell 0.6s ease; }
+      .trigger-card.buy.changed-card { animation: tcGlowBuy 0.6s ease; }
+
+      /* ===== DASHBOARD HEADER ===== */
+      .dash-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+      .dash-header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+      .dash-header-meta { display: flex; align-items: center; gap: 10px; }
+      .dash-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+      .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(35,44,68,0.5); font-variant-numeric: tabular-nums; }
+      .info-row .lbl { color: var(--muted); font-size: 13px; }
+      .info-row .val { font-weight: 600; font-size: 13px; }
+
+      /* ===== TWO COLUMN ===== */
+      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+      /* ===== STATUS PILL ===== */
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+      .status-pill.running { background: rgba(46,189,133,0.15); color: var(--green); border: 1px solid rgba(46,189,133,0.3); }
+      .status-pill.stopped { background: rgba(246,70,93,0.15); color: var(--red); border: 1px solid rgba(246,70,93,0.3); }
+      .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+      .status-pill.running .dot { animation: pulse 2s infinite; }
+      .ws-dot { font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+      .ws-dot.live { color: var(--green); }
+      .ws-dot.down { color: var(--yellow); }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+      /* ===== BUTTONS ===== */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+      .btn:active { transform: translateY(0); }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; box-shadow: 0 4px 16px rgba(79,124,255,0.28); }
+      .btn-primary:hover { filter: brightness(1.08); }
+      .btn-danger { border-color: rgba(246,70,93,0.4); color: var(--red); background: rgba(246,70,93,0.06); }
+      .btn-danger:hover { background: rgba(246,70,93,0.14); border-color: var(--red); }
+      .btn-sm { padding: 7px 12px; font-size: 12px; }
+
+      /* ===== MODAL ===== */
+      .modal-overlay {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(4,6,12,0.65);
+        backdrop-filter: blur(3px);
+        z-index: 600;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.open { display: flex; }
+      .modal-box {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+        width: 100%;
+        max-width: 360px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        animation: modalIn 0.18s ease;
+      }
+      @keyframes modalIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      .modal-box h3 { font-size: 16px; margin-bottom: 6px; }
+      .modal-box p { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+      .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+      .modal-actions .btn { flex: 1; justify-content: center; }
+      .modal-error { color: var(--red); font-size: 12px; margin-top: -8px; margin-bottom: 12px; min-height: 14px; }
+
+      /* ===== TABLE ===== */
+      table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+      th { text-align: left; padding: 10px 12px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+      td { padding: 10px 12px; border-bottom: 1px solid rgba(35,44,68,0.4); font-size: 13px; }
+      tr:hover td { background: rgba(79,124,255,0.04); }
+
+      .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+      .tag.buy { background: rgba(46,189,133,0.15); color: var(--green); }
+      .tag.sell { background: rgba(246,70,93,0.15); color: var(--red); }
+      .tag.stop { background: rgba(240,185,11,0.15); color: var(--yellow); }
+      .tag.start { background: rgba(79,124,255,0.15); color: var(--accent); }
+      .tag.hold { background: rgba(139,149,176,0.15); color: var(--muted); }
+      .tag.resume { background: rgba(79,124,255,0.15); color: var(--accent); }
+
+      /* ===== PUMP TRACKER ===== */
+      .watchlist-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .coin-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+        cursor: pointer;
+        transition: border-color 0.2s, transform 0.2s;
+        position: relative;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+      }
+      .coin-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+      .coin-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+      .coin-card .coin-symbol { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+      .coin-card .coin-price { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 2px; }
+      .coin-card .coin-change { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .coin-card .coin-hl { font-size: 10px; color: var(--muted); margin-top: auto; padding-top: 6px; font-variant-numeric: tabular-nums; }
+      .pump-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        margin-top: 6px;
+        animation: badgePulse 1.5s infinite;
+      }
+      .pump-badge.up { background: rgba(46,189,133,0.2); color: var(--green); border: 1px solid rgba(46,189,133,0.4); }
+      .pump-badge.down { background: rgba(246,70,93,0.2); color: var(--red); border: 1px solid rgba(246,70,93,0.4); }
+      @keyframes badgePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+      .pump-alerts-strip {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 12px 0;
+      }
+      .pump-alert-item {
+        flex: 0 0 auto;
+        background: rgba(46,189,133,0.08);
+        border: 1px solid rgba(46,189,133,0.2);
+        border-radius: 10px;
+        padding: 10px 16px;
+        min-width: 180px;
+      }
+      .pump-alert-item.flash { animation: flashGreen 1s ease; }
+      @keyframes flashGreen { 0% { background: rgba(46,189,133,0.3); } 100% { background: rgba(46,189,133,0.08); } }
+      .pump-alert-item .rank { font-size: 11px; color: var(--muted); }
+      .pump-alert-item .sym { font-size: 14px; font-weight: 700; }
+      .pump-alert-item .gain { font-size: 16px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+      .pump-alert-item .px { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      @media (max-width: 768px) {
+        .watchlist-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .coin-card { padding: 12px; min-height: 100px; }
+        .coin-card .coin-price { font-size: 15px; }
+        .coin-card .coin-symbol { font-size: 13px; }
+        .pump-alert-item { min-width: 150px; padding: 8px 12px; }
+      }
+      @media (max-width: 480px) {
+        .watchlist-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .coin-card { padding: 10px; min-height: 88px; border-radius: 10px; }
+        .coin-card .coin-symbol { font-size: 12px; margin-bottom: 2px; }
+        .coin-card .coin-price { font-size: 14px; }
+        .coin-card .coin-change { font-size: 12px; }
+        .coin-card .coin-hl { font-size: 9px; padding-top: 4px; }
+        .pump-badge { font-size: 9px; padding: 1px 6px; margin-top: 4px; }
+        .pump-alert-item { min-width: 130px; }
+        .pump-alert-item .gain { font-size: 14px; }
+        .pump-alert-item .sym { font-size: 13px; }
+      }
+
+      /* ===== CHART ===== */
+      .chart-container { position: relative; }
+      svg.chart { width: 100%; height: 240px; display: block; }
+      .chart-label { fill: var(--muted); font-size: 10px; font-family: monospace; }
+      .chart-overlay { position: absolute; inset: 0; pointer-events: none; }
+      .chart-tag {
+        position: absolute;
+        font: 600 11px var(--mono);
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(11, 15, 28, 0.88);
+        border: 1px solid currentColor;
+        white-space: nowrap;
+        line-height: 1.4;
+        letter-spacing: 0.2px;
+      }
+      .chart-tag.muted { border-color: transparent; background: rgba(11, 15, 28, 0.6); color: var(--muted); font-weight: 500; }
+
+      /* ===== FORM ===== */
+      .form-group { margin-bottom: 20px; }
+      .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+      .form-group input, .form-group select {
+        width: 100%;
+        padding: 11px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: inherit;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+        transition: border-color 0.2s;
+      }
+      .form-group input:focus { outline: none; border-color: var(--accent); }
+      .form-group .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+      /* ===== SLIDER ===== */
+      input[type=range] {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        background: var(--border);
+        border-radius: 3px;
+        outline: none;
+      }
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+      }
+      input[type=range]::-moz-range-thumb {
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        border: none;
+      }
+
+      /* ===== TOGGLE ===== */
+      .toggle { position: relative; display: inline-block; width: 48px; height: 26px; }
+      .toggle input { opacity: 0; width: 0; height: 0; }
+      .toggle .slider {
+        position: absolute; inset: 0;
+        background: var(--border);
+        border-radius: 26px;
+        transition: 0.3s;
+      }
+      .toggle .slider::before {
+        content: "";
+        position: absolute;
+        height: 20px; width: 20px;
+        left: 3px; bottom: 3px;
+        background: var(--text);
+        border-radius: 50%;
+        transition: 0.3s;
+      }
+      .toggle input:checked + .slider { background: var(--accent); }
+      .toggle input:checked + .slider::before { transform: translateX(22px); }
+
+      /* ===== TOAST ===== */
+      #toasts {
+        position: fixed;
+        bottom: 20px; right: 20px;
+        z-index: 500;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .toast {
+        padding: 12px 18px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13px;
+        max-width: 360px;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      }
+      .toast.success { border-left: 3px solid var(--green); }
+      .toast.error { border-left: 3px solid var(--red); }
+      .toast.info { border-left: 3px solid var(--accent); }
+      .toast.warning { border-left: 3px solid var(--yellow); }
+      @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+      /* ===== LOG BOX ===== */
+      .log-box {
+        background: #0a0d15;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        font-size: 12px;
+        line-height: 1.7;
+        max-height: 420px;
+        overflow-y: auto;
+      }
+      .log-box .log-buy { color: var(--green); }
+      .log-box .log-sell { color: var(--red); }
+      .log-box .log-stop { color: var(--yellow); }
+      .log-box .log-start { color: var(--accent); }
+      .log-box .log-hold { color: var(--muted); }
+      .log-box .log-resume { color: var(--accent); }
+      .log-box .log-info { color: var(--text); }
+
+      /* ===== WARNING BANNER ===== */
+      .warning-banner {
+        background: rgba(240,185,11,0.1);
+        border: 1px solid rgba(240,185,11,0.3);
+        color: var(--yellow);
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 13px;
+      }
+
+      /* ===== PROGRESS ===== */
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 12px 0;
+      }
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+        transition: width 0.2s;
+        width: 0%;
+      }
+
+      /* ===== HELP CARDS ===== */
+      .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+      .help-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        transition: border-color 0.2s;
+      }
+      .help-card:hover { border-color: var(--accent); }
+      .help-card h3 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+      .help-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+      .help-card .si { color: #c5cde0; }
+      .code-block {
+        background: #0a0d15;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 12px;
+        margin: 10px 0;
+        color: var(--green);
+        white-space: pre-wrap;
+      }
+
+      /* ===== EMPTY STATE ===== */
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--muted);
+      }
+      .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+      .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+      .empty-state p { font-size: 14px; margin-bottom: 20px; }
+
+      /* ===== FLEX UTIL ===== */
+      .flex { display: flex; }
+      .flex-between { display: flex; justify-content: space-between; align-items: center; }
+      .flex-center { display: flex; align-items: center; gap: 8px; }
+      .gap-8 { gap: 8px; }
+      .gap-12 { gap: 12px; }
+      .mb-16 { margin-bottom: 16px; }
+      .mb-24 { margin-bottom: 24px; }
+      .mt-16 { margin-top: 16px; }
+      .text-green { color: var(--green); }
+      .text-red { color: var(--red); }
+      .text-muted { color: var(--muted); }
+      .text-accent { color: var(--accent); }
+      .text-yellow { color: var(--yellow); }
+      .text-right { text-align: right; }
+      .nowrap { white-space: nowrap; }
+
+      /* ===== RESPONSIVE ===== */
+      @media (max-width: 768px) {
+        #sidebar { transform: translateX(-100%); width: 80%; max-width: 280px; }
+        #sidebar.open { transform: translateX(0); }
+        #hamburger { display: flex; }
+        #mobile-topbar { display: flex; }
+        #main { margin-left: 0; padding: calc(var(--safe-top) + 54px) 14px calc(24px + var(--safe-bottom)); }
+
+        .page-title { font-size: 18px; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 18px; }
+
+        .dash-header { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 18px; }
+        .dash-header .page-title { margin-bottom: 0; font-size: 20px; }
+        .dash-header-left { gap: 10px; }
+        .dash-header-meta { display: none; }
+        .dash-header-actions { width: 100%; }
+        .dash-header-actions .btn { flex: 1; justify-content: center; }
+
+        .metric-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+        .metric-card { padding: 14px; }
+        .metric-value { font-size: 19px; }
+        .metric-label { font-size: 11px; }
+
+        .panel { padding: 14px; margin-bottom: 18px; }
+        .panel-title { font-size: 14px; margin-bottom: 12px; }
+
+        .two-col { grid-template-columns: 1fr; gap: 14px; }
+        .form-row { grid-template-columns: 1fr; gap: 14px; }
+        .info-grid { grid-template-columns: 1fr; gap: 6px 0; }
+        .info-row { padding: 5px 0; }
+        .info-row .lbl { font-size: 12px; }
+        .info-row .val { font-size: 12px; }
+
+        .help-grid { grid-template-columns: 1fr; }
+        .help-card { padding: 16px; }
+        .help-card h3 { font-size: 14px; }
+        .help-card p { font-size: 12px; }
+
+        .form-group input, .form-group select { font-size: 16px; padding: 12px 14px; }
+        .form-group label { font-size: 12px; }
+        .form-group .hint { font-size: 10px; }
+
+        .btn { padding: 11px 16px; font-size: 13px; min-height: 44px; }
+        .btn-sm { padding: 8px 12px; min-height: 36px; }
+
+        table { font-size: 11px; }
+        th { padding: 7px 6px; font-size: 10px; }
+        td { padding: 7px 6px; font-size: 11px; }
+        .tag { font-size: 10px; padding: 1px 6px; }
+
+        svg.chart { height: 180px; }
+        .log-box { font-size: 11px; max-height: 300px; padding: 10px; }
+        .warning-banner { font-size: 12px; padding: 10px 14px; }
+        .empty-state { padding: 40px 16px; }
+        .empty-state .icon { font-size: 36px; }
+        .empty-state h3 { font-size: 16px; }
+
+        #toasts { bottom: calc(12px + var(--safe-bottom)); right: 12px; left: 12px; }
+        .toast { max-width: none; font-size: 12px; padding: 10px 14px; }
+
+        .trigger-grid { grid-template-columns: 1fr; gap: 10px; }
+        .modal-box { max-width: none; }
+
+        .flex-between { flex-wrap: wrap; gap: 8px; }
+        .status-pill { font-size: 11px; padding: 4px 10px; }
+
+        #overlay.open { display: block; }
+      }
+
+      @media (max-width: 480px) {
+        #main { padding: 52px 10px 20px; }
+        .metric-grid { grid-template-columns: 1fr; gap: 8px; }
+        .metric-card { padding: 12px; }
+        .metric-value { font-size: 17px; }
+        .panel { padding: 12px; }
+        .page-title { font-size: 16px; }
+        table { font-size: 10px; }
+        th, td { padding: 6px 4px; }
+        svg.chart { height: 160px; }
+        .log-box { max-height: 240px; font-size: 10px; }
+      }
+    
+/* Coin picker dropdown */
+.coin-picker { position: relative; }
+.cp-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  max-height: 240px; overflow-y: auto;
+  background: #1a1f2e; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px; margin-top: 4px; display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.cp-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+.cp-item:hover { background: rgba(255,255,255,.08); }
+.cp-item b { color: #4ade80; }
+
+/* Price flash animation */
+@keyframes priceFlashUp { 0% { background: rgba(34,197,94,.35); } 100% { background: transparent; } }
+@keyframes priceFlashDown { 0% { background: rgba(239,68,68,.35); } 100% { background: transparent; } }
+.price-flash-up { animation: priceFlashUp .8s ease-out; border-radius: 6px; }
+.price-flash-down { animation: priceFlashDown .8s ease-out; border-radius: 6px; }
+</style>
+    <meta property="og:image" content="https://bolt.new/static/og_default.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+</head>
+  <body>
+    <button id="hamburger">&#9776;</button>
+    <div id="mobile-topbar">
+      <span class="mt-title" id="mt-title">∞ Dashboard</span>
+      <span class="ws-dot down ws-status-el" style="font-size:10px">&#9679; …</span>
+    </div>
+    <div id="overlay"></div>
+
+    <nav id="sidebar">
+      <div class="sidebar-logo"><span>∞</span> Infinity Grid</div>
+      <button class="nav-btn active" data-page="dashboard">&#128202; Dashboard</button>
+      <button class="nav-btn" data-page="create">&#10133; Create / Reset Bot</button>
+      <button class="nav-btn" data-page="backtest">&#128200; Backtest</button>
+      <button class="nav-btn" data-page="pump">&#128640; Pump Tracker</button>
+      <button class="nav-btn" data-page="live">&#128260; Live Update</button>
+      <button class="nav-btn" data-page="help">&#8505; Help</button>
+      <div class="sidebar-footer">Real data: OKX Public API<br>100% paper trading</div>
+    </nav>
+
+    <div id="main">
+      <!-- DASHBOARD -->
+      <section id="page-dashboard" class="page active">
+        <div id="dash-content"></div>
+      </section>
+
+      <!-- CREATE -->
+      <section id="page-create" class="page">
+        <h2 class="page-title">&#10133; Create / Reset Bot</h2>
+        <div id="create-warning"></div>
+        <div class="panel" style="max-width:560px">
+          <form id="create-form">
+            <div class="form-group">
+              <label>Trading Pair</label>
+              <input type="text" id="f-pair" value="BTC-USDT" placeholder="e.g. BTC-USDT" />
+              <div class="hint">Auto-normalized. Examples: BTC-USDT, ETH/USDT, SOL</div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Investment (USDT)</label>
+                <input type="number" id="f-investment" value="100" min="10" step="any" />
+                <div class="hint">Minimum 10 USDT</div>
+              </div>
+              <div class="form-group">
+                <label>Lowest Price</label>
+                <input type="number" id="f-lowest" step="any" placeholder="Auto-filled at 85%" />
+                <div class="hint">Auto-set to 85% of live price</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Profit per Grid (%)</label>
+              <input type="number" id="f-gridpct" value="0.8" min="0.3" max="10" step="0.01" />
+              <div class="hint">Range: 0.3% – 10%</div>
+            </div>
+            <div class="form-group">
+              <label>&#128274; Delete Password</label>
+              <input type="password" id="f-password" placeholder="Set a password to protect this bot" minlength="4" required autocomplete="new-password" />
+              <div class="hint">You'll need this to delete the bot later. Saved only on this device.</div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="create-submit">&#9889; Create Bot</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- BACKTEST -->
+      <section id="page-backtest" class="page">
+        <h2 class="page-title">&#128200; Backtest</h2>
+        <div class="panel" style="max-width:560px">
+          <form id="bt-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Trading Pair</label>
+                <input type="text" id="bt-pair" value="BTC-USDT" />
+              </div>
+              <div class="form-group">
+                <label>Investment (USDT)</label>
+                <input type="number" id="bt-investment" value="100" min="10" step="any" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Lowest Price</label>
+                <input type="number" id="bt-lowest" step="any" />
+              </div>
+              <div class="form-group">
+                <label>Profit per Grid (%)</label>
+                <input type="number" id="bt-gridpct" value="0.8" min="0.3" max="10" step="0.01" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Days of History: <span id="bt-days-val" class="text-accent">14</span> days</label>
+              <input type="range" id="bt-days" min="3" max="30" value="14" />
+              <div class="hint">Fetches 1-minute candles from OKX (3–30 days). Larger ranges take longer to fetch.</div>
+            </div>
+            <div class="form-group">
+              <label class="flex-center">
+                <input type="checkbox" id="bt-save" style="width:auto;margin-right:8px" />
+                Save this backtest as current bot state
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary" id="bt-submit">&#9654; Run Backtest</button>
+          </form>
+          <div id="bt-progress" style="display:none">
+            <div class="progress-bar"><div class="progress-fill" id="bt-progress-fill"></div></div>
+            <div id="bt-progress-text" class="text-muted" style="font-size:12px"></div>
+          </div>
+        </div>
+        <div id="bt-results"></div>
+      </section>
+
+      <!-- PUMP TRACKER -->
+      <section id="page-pump" class="page">
+        <h2 class="page-title">&#128640; Pump Tracker</h2>
+        <p class="text-muted" style="font-size:12px;margin-top:-16px;margin-bottom:24px">Spotting pumps is risky — most pumped coins dump. This tab is for WATCHING only, not financial advice.</p>
+        <div class="panel">
+          <div class="flex-between mb-16"><div class="panel-title">Watchlist</div><div class="text-muted" style="font-size:12px" id="pump-watchlist-status">Loading...</div></div>
+          <div class="watchlist-grid" id="pump-watchlist"></div>
+        </div>
+        <div id="pump-sim-panel"></div>
+        <div class="panel">
+          <div class="panel-title mb-16">Top 3 Pumping Coins (All Spot)</div>
+          <div class="pump-alerts-strip" id="pump-alerts"></div>
+        </div>
+      </section>
+
+      <!-- LIVE UPDATE -->
+      <section id="page-live" class="page">
+        <h2 class="page-title">&#128260; Live Update</h2>
+        <div class="panel">
+          <div class="flex-between mb-16">
+            <div class="flex-center gap-12">
+              <span class="ws-dot down ws-status-el">&#9679; Connecting…</span>
+              <span class="text-muted" id="live-status">Waiting for live price…</span>
+            </div>
+          </div>
+          <div class="log-box" id="live-log">
+            <div class="log-info">Session log will appear here as the bot auto-updates in the background.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HELP -->
+      <section id="page-help" class="page">
+        <h2 class="page-title">&#8505; Help</h2>
+        <div class="help-grid">
+          <div class="help-card">
+            <h3>&#128202; What is this?</h3>
+            <p>A paper-trading simulator for Pionex-style "Infinity Grid" bots. No real money is involved — it uses live market data from the OKX public API to simulate buy/sell trades based on your parameters. <span class="si">මෙය සත්‍ය මුදල් භාවිතා නොකරන අත්හදා බැලීමකි.</span></p>
+          </div>
+          <div class="help-card">
+            <h3>&#9851; How Infinity Grid works</h3>
+            <p>The bot maintains a target base-currency value. When the base value rises above target (price went up), it sells the excess. When it falls below (price went down), it buys more. This creates a grid that profits from volatility.</p>
+            <div class="code-block">targetValue = investment × (lowestPrice / startPrice)</div>
+          </div>
+          <div class="help-card">
+            <h3>&#128209; Parameter Guide</h3>
+            <p><b>Trading Pair:</b> e.g. BTC-USDT<br><b>Investment:</b> Total USDT to allocate<br><b>Lowest Price:</b> Below this, the bot stops<br><b>Profit/Grid:</b> Target gain per grid trade<br><span class="si">පරාමිති තෝරන්න පෙර පිළිබඳ හොඳින් දැනගන්න.</span></p>
+          </div>
+          <div class="help-card">
+            <h3>&#128176; Fees &amp; Data Source</h3>
+            <p>Trading fee: 0.05% per side (buy and sell). Market data comes from the OKX public API — no API key required. Prices stream live over WebSocket the instant they change on the exchange (falls back to REST polling if the socket drops). <span class="si">ගාස්තු 0.05% ක් සෑම ගනුදෙනුවකටම අදාළව ගණන් කෙරේ.</span></p>
+          </div>
+          <div class="help-card">
+            <h3>&#128202; How Backtest works</h3>
+            <p>Select 3–60 days of historical hourly candles from OKX. The simulator runs every candle's close price through the same rebalance logic, then shows how your bot would have performed. Optionally save the result as your current bot.</p>
+          </div>
+          <div class="help-card">
+            <h3>&#9888; Disclaimer</h3>
+            <p style="color:var(--yellow)">This is a simulation for educational purposes only. It is NOT financial advice. Past performance does not guarantee future results. <span class="si">මෙය ආයෝජන උපදෙස් නොවේ. ඔබම වගකීම් භාර ගන්න.</span></p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="pwd-modal" class="modal-overlay">
+      <div class="modal-box">
+        <h3>&#128274; Confirm Password</h3>
+        <p id="pwd-modal-text">Enter this bot's delete password to continue.</p>
+        <div class="form-group" style="margin-bottom:6px">
+          <input type="password" id="pwd-modal-input" placeholder="Password" autocomplete="off" />
+        </div>
+        <div class="modal-error" id="pwd-modal-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="pwd-modal-cancel">Cancel</button>
+          <button type="button" class="btn btn-danger" id="pwd-modal-confirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toasts"></div>
+
+    <script>
+    // ========== CONSTANTS ==========
+    const FEE = 0.0005;
+    const STORAGE_KEY = 'ig_bot_state_v1';
+    const PRICE_SERIES_KEY = 'ig_price_series_v1';
+    const MAX_HISTORY = 200;
+    const MAX_SERIES = 120;
+    const AUTO_INTERVAL = 1000; // 1 second — driven by live WebSocket ticks
+    const OKX_WS_URL = 'wss://ws.okx.com:8443/ws/v5/public';
+    const PUMP_INTERVAL = 5000; // 5 seconds — full-market scan still needs REST
+
+    // ========== UTILITIES ==========
+    function fmtMoney(v) {
+      const n = Number(v);
+      if (!isFinite(n)) return '0.00';
+      return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function fmtPrice(v) {
+      const n = Number(v);
+      if (!isFinite(n) || n === 0) return '0.00';
+      const abs = Math.abs(n);
+      let decimals;
+      if (abs >= 1000) decimals = 2;
+      else if (abs >= 1) decimals = 4;
+      else if (abs >= 0.01) decimals = 6;
+      else if (abs >= 0.0001) decimals = 8;
+      else decimals = 12;
+      return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+    function fmtSigned(v, isPct) {
+      const s = v >= 0 ? '+' : '';
+      return s + (isPct ? fmtMoney(v) + '%' : fmtMoney(v));
+    }
+    function fmtAmount(v) {
+      const n = Number(v);
+      if (!isFinite(n) || n === 0) return '0.00000000';
+      const abs = Math.abs(n);
+      let decimals;
+      if (abs >= 1000) decimals = 4;
+      else if (abs >= 1) decimals = 6;
+      else if (abs >= 0.01) decimals = 8;
+      else decimals = 12;
+      return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+    function fmtProfit(v) {
+      const s = v >= 0 ? '+' : '';
+      return s + Number(v).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    }
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+    function fmtTime(iso) {
+      return iso ? iso.slice(0, 19).replace('T', ' ') : '—';
+    }
+    function nowISO() { return new Date().toISOString(); }
+
+    function smartDecimals(price) {
+      if (!price || price <= 0 || !isFinite(price)) return 8;
+      const abs = Math.abs(price);
+      if (abs >= 1000) return 2;
+      if (abs >= 1) return 4;
+      if (abs >= 0.01) return 6;
+      if (abs >= 0.0001) return 8;
+      if (abs >= 0.000001) return 10;
+      return 12;
+    }
+    function fmtPriceSmart(price) {
+      const d = smartDecimals(price);
+      return Number(price).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function toast(msg, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = msg;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(40px)';
+        el.style.transition = 'all 0.3s';
+        setTimeout(() => el.remove(), 300);
+      }, 4000);
+    }
+
+    async function sha256Hex(str) {
+      const enc = new TextEncoder().encode(str);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Reusable password confirmation modal. Resolves with the entered
+    // password string, or null if the user cancels.
+    function askPassword(message) {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('pwd-modal');
+        const input = document.getElementById('pwd-modal-input');
+        const errEl = document.getElementById('pwd-modal-error');
+        const textEl = document.getElementById('pwd-modal-text');
+        const confirmBtn = document.getElementById('pwd-modal-confirm');
+        const cancelBtn = document.getElementById('pwd-modal-cancel');
+
+        textEl.textContent = message || "Enter this bot's delete password to continue.";
+        input.value = '';
+        errEl.textContent = '';
+        overlay.classList.add('open');
+        setTimeout(() => input.focus(), 50);
+
+        function cleanup() {
+          overlay.classList.remove('open');
+          confirmBtn.removeEventListener('click', onConfirm);
+          cancelBtn.removeEventListener('click', onCancel);
+          input.removeEventListener('keydown', onKeydown);
+        }
+        function onConfirm() {
+          const v = input.value;
+          cleanup();
+          resolve(v);
+        }
+        function onCancel() {
+          cleanup();
+          resolve(null);
+        }
+        function onKeydown(e) {
+          if (e.key === 'Enter') onConfirm();
+          if (e.key === 'Escape') onCancel();
+        }
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+        input.addEventListener('keydown', onKeydown);
+      });
+    }
+    function normalizePair(p) {
+      let s = p.trim().toUpperCase().replace(/\//g, '-').replace(/_/g, '-');
+      if (!s.includes('-')) s += '-USDT';
+      return s;
+    }
+
+    // ========== OKX API ==========
+    async function fetchTicker(pair) {
+      const url = 'https://www.okx.com/api/v5/market/ticker?instId=' + encodeURIComponent(pair);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data.data || !data.data[0]) throw new Error('No ticker data for ' + pair);
+      return parseFloat(data.data[0].last);
+    }
+
+    async function fetchAllTickers() {
+      const url = 'https://www.okx.com/api/v5/market/tickers?instType=SPOT';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data.data) throw new Error('No ticker data');
+      return data.data;
+    }
+
+    // Fetches OHLC candles for a given bar size and target count.
+    //
+    // OKX's regular /market/candles endpoint only retains roughly the most
+    // recent 1440 bars for any given timeframe — for 1-minute bars that's
+    // only ~1 day. Anything older has to come from the separate
+    // /market/history-candles endpoint (same params, same "after" cursor).
+    // This function pages through the regular endpoint first, then
+    // transparently switches over once we're past that window, so callers
+    // can just ask for "N days of 1m candles" without worrying about it.
+    async function fetchOHLCCandlesDeep(pair, bar, targetCount, onProgress) {
+      const REGULAR_LIMIT = 300; // OKX /market/candles max page size
+      const HISTORY_LIMIT = 100; // OKX /market/history-candles max page size (lower!)
+      const all = [];
+      let after = null;
+      let pages = 0;
+      let useHistory = false; // flips to true the moment the regular endpoint runs dry
+      let consecutiveFailures = 0;
+      let rateLimitRetries = 0;
+      // Dynamic ceiling sized to the actual request — 30 days of 1m candles
+      // needs ~430+ history pages, so a hardcoded 400 silently truncated it.
+      const MAX_PAGES = Math.ceil(targetCount / HISTORY_LIMIT)
+                      + Math.ceil(targetCount / REGULAR_LIMIT) + 10;
+
+      while (all.length < targetCount && pages < MAX_PAGES) {
+        const limit = useHistory ? HISTORY_LIMIT : REGULAR_LIMIT;
+        const base = useHistory
+          ? 'https://www.okx.com/api/v5/market/history-candles'
+          : 'https://www.okx.com/api/v5/market/candles';
+        let url = base + '?instId=' + encodeURIComponent(pair) + '&bar=' + bar + '&limit=' + limit;
+        if (after) url += '&after=' + after;
+
+        let res = null;
+        try { res = await fetch(url); } catch (e) { res = null; } // network drop
+
+        if (res && res.status === 429) {
+          rateLimitRetries++;
+          if (rateLimitRetries > 20) break; // safety valve
+          await new Promise(r => setTimeout(r, 600)); // back off and retry same page
+          continue;
+        }
+
+        if (!res || !res.ok) {
+          // Network error (res === null) or hard HTTP error (500, timeout...):
+          // retry the same page up to 3 times with growing backoff instead of
+          // silently truncating the whole fetch like before.
+          consecutiveFailures++;
+          if (consecutiveFailures <= 3) {
+            await new Promise(r => setTimeout(r, 400 * consecutiveFailures));
+            continue;
+          }
+          if (!useHistory) { useHistory = true; consecutiveFailures = 0; continue; }
+          break;
+        }
+        consecutiveFailures = 0;
+        rateLimitRetries = 0;
+
+        let data;
+        try { data = await res.json(); } catch (e) { break; }
+
+        if (!data.data || data.data.length === 0) {
+          // Regular endpoint ran out before we hit history-candles naturally
+          // (e.g. a short window right around the ~1440-bar retention edge).
+          // Switch over and retry the same "after" cursor instead of quitting.
+          if (!useHistory) { useHistory = true; continue; }
+          break;
+        }
+
+        const batch = data.data.map(c => ({
+          ts: parseInt(c[0]),
+          open: parseFloat(c[1]),
+          high: parseFloat(c[2]),
+          low: parseFloat(c[3]),
+          close: parseFloat(c[4])
+        })).reverse();
+        all.unshift(...batch);
+        after = data.data[data.data.length - 1][0];
+        pages++;
+        if (onProgress) onProgress(Math.min(all.length / targetCount, 1), all.length, targetCount);
+
+        if (data.data.length < limit) {
+          // A short page on the regular endpoint means it's exhausted its
+          // ~1440-bar retention window — switch to history-candles and keep
+          // paging with the same cursor instead of stopping early.
+          if (!useHistory) { useHistory = true; continue; }
+          break; // short page on history-candles means we're truly out of data
+        }
+        await new Promise(r => setTimeout(r, useHistory ? 200 : 150));
+      }
+      const out = all.slice(-targetCount);
+      // Metadata so callers can tell a truncated fetch from a complete one.
+      out.fetched = out.length;
+      out.target = targetCount;
+      out.truncated = out.length < targetCount;
+      return out;
+    }
+
+    // Best-guess intra-candle path. We don't have true tick data, so we
+    // approximate the order in which price touched each extreme using the
+    // candle's own direction: a bullish candle (close >= open) is assumed to
+    // have dipped to its low before rallying to its high; a bearish candle
+    // is assumed to have spiked to its high before falling to its low.
+    // Feeding [low, high, close] / [high, low, close] through rebalance()
+    // lets the bot catch grid levels that were crossed and reversed within
+    // a single candle, instead of only seeing the closing price.
+    function ohlcPath(c) {
+      return c.close >= c.open ? [c.low, c.high, c.close] : [c.high, c.low, c.close];
+    }
+
+    // Thin wrapper kept for the pump tracker's single-coin chart, which just
+    // wants a short run of hourly closes and doesn't need history-candles.
+    async function fetchCandles(pair, days, onProgress) {
+      const full = await fetchOHLCCandlesDeep(pair, '1H', days * 24, onProgress);
+      return full.map(c => ({ ts: c.ts, close: c.close }));
+    }
+
+    // ========== LIVE WEBSOCKET FEED (OKX public tickers) ==========
+    // Pushes prices the instant they change on the exchange, instead of
+    // polling every N seconds. Falls back to REST automatically if the
+    // socket is down or hasn't received a fresh tick yet.
+    let ws = null;
+    let wsPingTimer = null;
+    let wsReconnectTimer = null;
+    let wsReconnectDelay = 1000;
+    const wsWantedSubs = new Set(); // instIds we want streamed
+    const livePrices = {};          // instId -> { last, open24h, high24h, low24h, ts }
+
+    function wsSubscribe(instIds) {
+      instIds.forEach(id => wsWantedSubs.add(id));
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const args = instIds.map(id => ({ channel: 'tickers', instId: id }));
+      if (args.length) ws.send(JSON.stringify({ op: 'subscribe', args }));
+    }
+
+    function connectWs() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+      try {
+        ws = new WebSocket(OKX_WS_URL);
+      } catch (e) {
+        scheduleWsReconnect();
+        return;
+      }
+
+      ws.onopen = () => {
+        wsReconnectDelay = 1000;
+        wsPingTimer = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) ws.send('ping');
+        }, 20000);
+        if (wsWantedSubs.size) {
+          const args = Array.from(wsWantedSubs).map(id => ({ channel: 'tickers', instId: id }));
+          ws.send(JSON.stringify({ op: 'subscribe', args }));
+        }
+        updateWsStatusUi(true);
+      };
+
+      ws.onmessage = (ev) => {
+        if (ev.data === 'pong') return;
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch (e) { return; }
+        if (msg.arg && msg.arg.channel === 'tickers' && msg.data && msg.data[0]) {
+          const t = msg.data[0];
+          livePrices[t.instId] = {
+            last: parseFloat(t.last),
+            open24h: parseFloat(t.open24h),
+            high24h: parseFloat(t.high24h),
+            low24h: parseFloat(t.low24h),
+            ts: Date.now()
+          };
+        }
+      };
+
+      ws.onclose = () => {
+        if (wsPingTimer) { clearInterval(wsPingTimer); wsPingTimer = null; }
+        updateWsStatusUi(false, true);
+        scheduleWsReconnect();
+      };
+
+      ws.onerror = () => { if (ws) ws.close(); };
+    }
+
+    function scheduleWsReconnect() {
+      if (wsReconnectTimer) return;
+      wsReconnectTimer = setTimeout(() => {
+        wsReconnectTimer = null;
+        connectWs();
+      }, wsReconnectDelay);
+      wsReconnectDelay = Math.min(wsReconnectDelay * 2, 15000);
+    }
+
+    // Fresh live price if we have one (< 5s old), else falls back to REST.
+    async function getLivePrice(pair) {
+      const cached = livePrices[pair];
+      if (cached && Date.now() - cached.ts < 5000) return cached.last;
+      return await fetchTicker(pair);
+    }
+
+    // ========== INFINITY GRID BOT ==========
+    class InfinityGridBot {
+      constructor({ pair, investment, lowestPrice, gridPct, startPrice, pwdHash }) {
+        this.pair = pair;
+        this.investment = investment;
+        this.lowestPrice = lowestPrice;
+        this.gridPct = gridPct;
+        this.startPrice = startPrice;
+        this.pwdHash = pwdHash || null;
+        this.fee = FEE;
+        // Target Value (X) = Investment × (Lowest Price / Current Price)
+        this.targetValue = investment * (lowestPrice / startPrice);
+        // Buy base asset worth = Target Value; keep remaining USDT as reserve
+        this.usdt = investment - this.targetValue;
+        this.base = this.targetValue / startPrice;
+        this.avgBuyPrice = startPrice;
+        this.gridProfit = 0;
+        this.totalFees = 0;
+        this.tradeCount = 0;
+        this.status = 'RUNNING';
+        this.lastPrice = startPrice;
+        this.lastTradePrice = startPrice;
+        this.history = [{
+          time: nowISO(),
+          action: 'START',
+          amount: investment,
+          price: startPrice,
+          base: this.base,
+          usdt: this.usdt,
+          baseValue: this.base * startPrice,
+          gridProfit: 0,
+          note: 'Bot created'
+        }];
+        this.createdAt = nowISO();
+        this.updatedAt = nowISO();
+      }
+
+      rebalance(price, time, skipSave) {
+        time = time || nowISO();
+        this.lastPrice = price;
+        this.updatedAt = time;
+
+        if (price < this.lowestPrice) {
+          if (this.status === 'RUNNING') {
+            this.status = 'STOPPED';
+            this._log(time, 'STOP', 0, price, 'Below lowest price');
+          }
+          return 'STOPPED (below lowest)';
+        }
+
+        if (this.status === 'STOPPED' && price >= this.lowestPrice) {
+          this.status = 'RUNNING';
+          this._log(time, 'RESUME', 0, price, 'Resumed — price above lowest');
+        }
+
+        if (this.status !== 'RUNNING') return this.status;
+
+        const baseVal = this.base * price;
+        const threshold = this.gridPct / 100;
+
+        // While price is rising → only SELL (never buy)
+        if (price > this.lastTradePrice && baseVal > this.targetValue * (1 + threshold)) {
+          const excess = baseVal - this.targetValue;
+          const sellBase = excess / price;
+          const feeAmt = excess * this.fee;
+          const received = excess - feeAmt;
+          const realized = received - sellBase * this.avgBuyPrice;
+          this.gridProfit += realized;
+          this.totalFees += feeAmt;
+          this.base -= sellBase;
+          this.usdt += received;
+          this.tradeCount++;
+          this.lastTradePrice = price;
+          this._log(time, 'SELL', sellBase, price, 'Sold excess base');
+          return 'SELL';
+        }
+
+        // While price is falling → only BUY (never sell)
+        if (price < this.lastTradePrice && baseVal < this.targetValue * (1 - threshold) && this.usdt > 0.01) {
+          const needed = this.targetValue - baseVal;
+          const buyValue = Math.min(needed, this.usdt);
+          const feeAmt = buyValue * this.fee;
+          const net = buyValue - feeAmt;
+          const buyBase = net / price;
+          this.avgBuyPrice = (this.avgBuyPrice * this.base + buyValue) / (this.base + buyBase);
+          this.base += buyBase;
+          this.usdt -= buyValue;
+          this.totalFees += feeAmt;
+          this.tradeCount++;
+          this.lastTradePrice = price;
+          this._log(time, 'BUY', buyBase, price, 'Bought to reach target');
+          return 'BUY';
+        }
+
+        return 'HOLD';
+      }
+
+      totalValue(p) { return this.base * p + this.usdt; }
+      unrealizedPnl(p) { return (p - this.avgBuyPrice) * this.base; }
+      totalProfit(p) { return this.gridProfit + this.unrealizedPnl(p); }
+
+      _log(time, action, amount, price, note) {
+        this.history.push({
+          time, action,
+          amount: amount,
+          price: price,
+          base: this.base,
+          usdt: this.usdt,
+          baseValue: this.base * price,
+          gridProfit: this.gridProfit,
+          note: note
+        });
+        if (this.history.length > MAX_HISTORY) this.history = this.history.slice(-MAX_HISTORY);
+      }
+
+      toJSON() {
+        const keys = ['pair','investment','lowestPrice','gridPct','startPrice','pwdHash','fee','targetValue','usdt','base','avgBuyPrice','gridProfit','totalFees','tradeCount','status','lastPrice','lastTradePrice','history','createdAt','updatedAt'];
+        const o = {};
+        keys.forEach(k => o[k] = this[k]);
+        return o;
+      }
+
+      static fromJSON(o) {
+        const bot = Object.create(InfinityGridBot.prototype);
+        Object.assign(bot, o);
+        if (!bot.history) bot.history = [];
+        if (!bot.fee) bot.fee = FEE;
+        if (bot.pwdHash === undefined) bot.pwdHash = null;
+        if (bot.lastTradePrice === undefined) bot.lastTradePrice = bot.startPrice;
+        return bot;
+      }
+    }
+
+    // ========== NEXT GRID LEVELS ==========
+    // Works out the exact price the bot will SELL at (base value rises
+    // targetValue*(1+gridPct%)) and BUY at (base value falls
+    // targetValue*(1-gridPct%)), given the bot's current base holdings.
+    function computeNextTriggers(bot, price) {
+        const threshold = bot.gridPct / 100;
+        const sellPrice = bot.base > 0 ? (bot.targetValue * (1 + threshold)) / bot.base : null;
+        const buyPrice = bot.base > 0 ? (bot.targetValue * (1 - threshold)) / bot.base : null;
+        const hasUsdt = bot.usdt > 0.01;
+        const sellPct = sellPrice ? ((sellPrice - price) / price) * 100 : null;
+        const buyPct = buyPrice ? ((price - buyPrice) / price) * 100 : null;
+        const buyBelowStop = buyPrice !== null && buyPrice <= bot.lowestPrice;
+        return { sellPrice, buyPrice, sellPct, buyPct, hasUsdt, buyBelowStop };
+    }
+
+    const lastTriggerPrice = { sell: null, buy: null };
+
+    function renderTriggerPanel(bot, price) {
+      const t = computeNextTriggers(bot, price);
+      let html = '<div class="panel"><div class="flex-between mb-16">';
+      html += '<div class="panel-title" style="margin:0">Next Grid Levels</div>';
+      html += '<div class="text-muted" style="font-size:12px">Profit/Grid: ' + fmtMoney(bot.gridPct) + '%</div>';
+      html += '</div>';
+      html += '<div class="trigger-grid" id="trigger-grid">';
+      html += triggerCard('sell', t.sellPrice, t.sellPct, 'Next SELL', null);
+      if (!t.hasUsdt) {
+        html += triggerCard('buy', t.buyPrice, t.buyPct, 'Next BUY', 'No USDT reserve left to buy');
+      } else if (t.buyBelowStop) {
+        html += triggerCard('buy', t.buyPrice, t.buyPct, 'Next BUY', 'Below stop price — bot would STOP first at $' + fmtPrice(bot.lowestPrice));
+      } else {
+        html += triggerCard('buy', t.buyPrice, t.buyPct, 'Next BUY', null);
+      }
+      html += '</div></div>';
+      return html;
+    }
+
+    function triggerCard(kind, triggerPrice, pct, label, note) {
+      const priceStr = triggerPrice !== null && isFinite(triggerPrice) ? '$' + fmtPrice(triggerPrice) : '—';
+      const pctStr = pct !== null && isFinite(pct) ? (kind === 'sell' ? '+' : '-') + fmtMoney(Math.abs(pct)) + '% away' : '';
+      let priceChanged = false;
+      if (triggerPrice !== null && isFinite(triggerPrice)) {
+        priceChanged = lastTriggerPrice[kind] !== null && lastTriggerPrice[kind] !== triggerPrice;
+        lastTriggerPrice[kind] = triggerPrice;
+      } else {
+        lastTriggerPrice[kind] = null;
+      }
+      let html = '<div class="trigger-card ' + kind + (priceChanged ? ' changed-card' : '') + '" data-kind="' + kind + '">';
+      html += '<div class="tc-label"><span class="tc-dot"></span>' + label + '</div>';
+      html += '<div class="tc-price' + (priceChanged ? ' changed' : '') + '">' + priceStr + '</div>';
+      html += '<div class="tc-dist' + (priceChanged ? ' changed' : '') + '">' + (note ? note : pctStr) + '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function updateTriggerPanel(bot, price) {
+      const grid = document.getElementById('trigger-grid');
+      if (!grid) return;
+      const t = computeNextTriggers(bot, price);
+      const cards = grid.querySelectorAll('.trigger-card');
+      if (cards.length < 2) return;
+      cards[0].outerHTML = triggerCard('sell', t.sellPrice, t.sellPct, 'Next SELL', null);
+      if (!t.hasUsdt) {
+        cards[1].outerHTML = triggerCard('buy', t.buyPrice, t.buyPct, 'Next BUY', 'No USDT reserve left to buy');
+      } else if (t.buyBelowStop) {
+        cards[1].outerHTML = triggerCard('buy', t.buyPrice, t.buyPct, 'Next BUY', 'Below stop price — bot would STOP first at $' + fmtPrice(bot.lowestPrice));
+      } else {
+        cards[1].outerHTML = triggerCard('buy', t.buyPrice, t.buyPct, 'Next BUY', null);
+      }
+    }
+
+    // ========== STORAGE ==========
+    function saveBot(bot) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bot.toJSON()));
+      } catch(e) { console.error('Save failed', e); }
+    }
+    function loadBot() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return InfinityGridBot.fromJSON(JSON.parse(raw));
+      } catch(e) { return null; }
+    }
+    function deleteBot() { localStorage.removeItem(STORAGE_KEY); }
+    function savePriceSeries(arr) {
+      try { localStorage.setItem(PRICE_SERIES_KEY, JSON.stringify(arr)); } catch(e) {}
+    }
+    function loadPriceSeries() {
+      try { const r = localStorage.getItem(PRICE_SERIES_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; }
+    }
+
+    // ========== PRICE SERIES ==========
+    let priceSeries = loadPriceSeries();
+    function addPrice(p) {
+      priceSeries.push({ price: p, time: nowISO() });
+      if (priceSeries.length > MAX_SERIES) priceSeries = priceSeries.slice(-MAX_SERIES);
+      savePriceSeries(priceSeries);
+    }
+
+    // ========== NAVIGATION ==========
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.querySelector('.nav-btn[data-page="' + name + '"]');
+      if (btn) btn.classList.add('active');
+      const mtTitle = document.getElementById('mt-title');
+      if (mtTitle && btn) mtTitle.textContent = '∞ ' + btn.textContent.replace(/^\S+\s/, '').trim();
+      if (name === 'dashboard') { catchUpSync(); renderDashboard(); }
+      if (name === 'create') { renderCreateWarning(); autoFillLowestPrice(); }
+      if (name === 'pump') renderPumpTracker();
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => showPage(btn.dataset.page));
+    });
+    document.getElementById('hamburger').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('open');
+    });
+    document.getElementById('overlay').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    });
+
+    // ========== DASHBOARD ==========
+    function renderDashboard() {
+      const bot = loadBot();
+      const el = document.getElementById('dash-content');
+      if (!bot) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">∞</div><h3>No bot yet</h3><p>Create a bot to start simulating.</p><button class="btn btn-primary" onclick="showPage(\'create\')">&#10133; Create Bot</button></div>';
+        return;
+      }
+
+      const price = bot.lastPrice;
+      const tv = bot.totalValue(price);
+      const tp = bot.totalProfit(price);
+      const upnl = bot.unrealizedPnl(price);
+      const pctReturn = (tp / bot.investment) * 100;
+      const priceChange = ((price - bot.startPrice) / bot.startPrice) * 100;
+
+      const statusClass = bot.status === 'RUNNING' ? 'running' : 'stopped';
+      const profitClass = tp >= 0 ? 'text-green' : 'text-red';
+      const priceChangeClass = priceChange >= 0 ? 'text-green' : 'text-red';
+      const baseCoin = bot.pair.split('-')[0];
+
+      let html = '<div class="dash-header">';
+      html += '<div class="dash-header-left">';
+      html += '<h2 class="page-title" style="margin:0">' + escapeHtml(bot.pair) + '</h2>';
+      html += '<span class="status-pill ' + statusClass + '"><span class="dot"></span>' + bot.status + '</span>';
+      html += '<span class="dash-header-meta">';
+      html += '<span class="ws-dot down ws-status-el">&#9679; Connecting…</span>';
+      html += '<span class="text-muted" style="font-size:12px" id="auto-status">Waiting for live price…</span>';
+      html += '</span>';
+      html += '</div>';
+      html += '<div class="dash-header-actions">';
+      html += '<button class="btn btn-primary btn-sm" id="refresh-price">&#128260; Refresh Price</button>';
+      html += '<button class="btn btn-sm btn-danger" id="delete-bot">&#128465; Delete Bot</button>';
+      html += '</div>';
+      html += '</div>';
+
+      // Metric cards
+      html += '<div class="metric-grid">';
+      html += metricCard('Current Price', '$' + fmtPrice(price), bot.pair + ' live ticker');
+      html += metricCard('Price Change', '<span class="' + priceChangeClass + '">' + fmtSigned(priceChange, true) + '</span>', 'Since start price');
+      html += metricCard('Total Value', '$' + fmtMoney(tv), 'Base + USDT at current price');
+      html += metricCard('Total Profit', '<span class="' + profitClass + '">' + fmtProfit(tp) + '</span>', '<span class="' + profitClass + '">' + fmtSigned(pctReturn, true) + '</span> return');
+      html += metricCard('Return', '<span class="' + profitClass + '">' + fmtSigned(pctReturn, true) + '</span>', 'On $' + fmtMoney(bot.investment) + ' invested');
+      html += metricCard('Unrealized PnL', '<span class="' + (upnl >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(upnl) + '</span>', 'Open position');
+      html += '</div>';
+
+      // Current Holdings
+      html += '<div class="panel" id="holdings-panel">';
+      html += '<div class="flex-between mb-16"><div class="panel-title">Current Holdings</div><div class="text-muted" style="font-size:12px" id="holdings-updated">Updated ' + fmtTime(bot.updatedAt) + '</div></div>';
+      html += '<div class="metric-grid" style="margin-bottom:0">';
+      html += metricCard('Current Base', '<span id="cur-base">' + fmtAmount(bot.base) + '</span>', baseCoin + ' held');
+      html += metricCard('Current USDT', '<span id="cur-usdt">$' + fmtMoney(bot.usdt) + '</span>', 'USDT reserve');
+      html += metricCard('Current Total Value', '<span id="cur-total">$' + fmtMoney(tv) + '</span>', 'Base value + USDT at latest price');
+      html += '</div>';
+      html += '</div>';
+
+      // Next Grid Levels
+      html += renderTriggerPanel(bot, price);
+
+      // Chart
+      const trig = computeNextTriggers(bot, price);
+      html += '<div class="panel">';
+      html += '<div class="flex-between mb-16"><div class="panel-title">Price Chart</div><div class="text-muted" style="font-size:12px">Last ' + priceSeries.length + ' prices</div></div>';
+      html += '<div class="chart-container">' + drawChart(priceSeries, bot.startPrice, trig.sellPrice, trig.buyPrice) + '</div>';
+      html += '</div>';
+
+      // Info panels
+      html += '<div class="two-col">';
+      html += '<div class="panel"><div class="panel-title">Bot Parameters</div><div class="info-grid">';
+      html += infoRow('Investment', '$' + fmtMoney(bot.investment));
+      html += infoRow('Lowest Price', '$' + fmtPrice(bot.lowestPrice));
+      html += infoRow('Profit / Grid', fmtMoney(bot.gridPct) + '%');
+      html += infoRow('Target Value', '$' + fmtMoney(bot.targetValue));
+      html += infoRow('Start Price', '$' + fmtPrice(bot.startPrice));
+      html += infoRow('Created', fmtTime(bot.createdAt));
+      html += infoRow('Last Update', fmtTime(bot.updatedAt));
+      html += '</div></div>';
+
+      html += '<div class="panel"><div class="panel-title">Holdings</div><div class="info-grid">';
+      html += infoRow('Base Amount', fmtAmount(bot.base));
+      html += infoRow('Base Value', '$' + fmtMoney(bot.base * price));
+      html += infoRow('USDT Reserve', '$' + fmtMoney(bot.usdt));
+      html += infoRow('Avg Buy Price', '$' + fmtPrice(bot.avgBuyPrice));
+      html += infoRow('Grid Profit (Realized)', '<span class="' + (bot.gridProfit >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(bot.gridProfit) + '</span>');
+      html += infoRow('Unrealized PnL', '<span class="' + (upnl >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(upnl) + '</span>');
+      html += infoRow('Trades Count', bot.tradeCount);
+      html += infoRow('Fees Paid', '$' + fmtMoney(bot.totalFees));
+      html += '</div></div>';
+      html += '</div>';
+
+      // Trades table
+      html += renderTradesTable(bot);
+
+      el.innerHTML = html;
+
+      const delBtn = document.getElementById('delete-bot');
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          const current = loadBot();
+          if (!current) return;
+
+          if (current.pwdHash) {
+            let message = 'Enter the delete password for this bot. This cannot be undone.';
+            let ok = false;
+            for (let attempt = 0; attempt < 5 && !ok; attempt++) {
+              const entered = await askPassword(message);
+              if (entered === null) return; // cancelled
+              const hash = await sha256Hex(entered);
+              if (hash === current.pwdHash) {
+                ok = true;
+              } else {
+                message = 'Incorrect password — try again.';
+              }
+            }
+            if (!ok) { toast('Too many incorrect attempts', 'error'); return; }
+          } else {
+            if (!confirm('Delete this bot? This cannot be undone.')) return;
+          }
+
+          deleteBot();
+          priceSeries = [];
+          savePriceSeries([]);
+          toast('Bot deleted', 'info');
+          renderDashboard();
+        });
+      }
+      const refreshBtn = document.getElementById('refresh-price');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = 'Fetching...';
+          try {
+            const price = await fetchTicker(bot.pair);
+            addPrice(price);
+            const action = bot.rebalance(price);
+            saveBot(bot);
+            renderDashboard();
+            if (action === 'BUY') toast('BUY @ $' + fmtPrice(price), 'success');
+            else if (action === 'SELL') toast('SELL @ $' + fmtPrice(price), 'info');
+            else if (action.startsWith('STOPPED')) toast('Bot STOPPED — below lowest price', 'warning');
+          } catch(e) {
+            toast('Error refreshing price: ' + e.message, 'error');
+          } finally {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '&#128260; Refresh Price';
+          }
+        });
+      }
+    }
+
+    function renderTradesTable(bot) {
+      const trades = bot.history.slice().reverse().slice(0, 50);
+      let html = '<div class="panel" id="trades-panel"><div class="panel-title">Recent Trades</div>';
+      if (trades.length === 0) {
+        html += '<div class="text-muted" style="padding:20px;text-align:center">No trades yet</div>';
+      } else {
+        html += '<div style="overflow-x:auto"><table><thead><tr><th>Time</th><th>Action</th><th>Price</th><th>Amount</th><th>Base Value</th><th>Grid Profit</th><th>Note</th></tr></thead><tbody>';
+        trades.forEach(t => {
+          const cls = t.action.toLowerCase();
+          html += '<tr>';
+          html += '<td class="nowrap">' + fmtTime(t.time) + '</td>';
+          html += '<td><span class="tag ' + cls + '">' + t.action + '</span></td>';
+          html += '<td>$' + fmtPrice(t.price) + '</td>';
+          html += '<td>' + (t.amount ? fmtAmount(t.amount) : '—') + '</td>';
+          html += '<td>$' + fmtMoney(t.baseValue) + '</td>';
+          html += '<td>' + fmtProfit(t.gridProfit) + '</td>';
+          html += '<td class="text-muted">' + (t.note || '') + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function metricCard(label, value, sub) {
+      return '<div class="metric-card"><div class="metric-label">' + label + '</div><div class="metric-value">' + value + '</div><div class="text-muted" style="font-size:12px;margin-top:6px">' + (sub || '') + '</div></div>';
+    }
+    function infoRow(lbl, val) {
+      return '<div class="info-row"><span class="lbl">' + lbl + '</span><span class="val">' + val + '</span></div>';
+    }
+
+    // HTML tag positioned by percentage over the chart — text rendered as
+    // real DOM/CSS, so it never inherits the SVG viewBox's non-uniform x/y
+    // stretch (that stretch is exactly what was making the SVG <text>
+    // trigger labels look blurry/squished on narrow phone screens).
+    // hAlign 'end' anchors the tag's right edge to xPct; vAlign 'above'
+    // anchors its bottom edge to yPct, otherwise its top edge is used.
+    function chartTag(xPct, yPct, text, color, hAlign, vAlign, muted) {
+      const tx = hAlign === 'end' ? '-100%' : '0%';
+      const ty = vAlign === 'above' ? '-100%' : '0%';
+      const cls = muted ? 'chart-tag muted' : 'chart-tag';
+      const style = 'left:' + xPct.toFixed(2) + '%;top:' + yPct.toFixed(2) + '%;' +
+        'transform:translate(' + tx + ',' + ty + ');' + (muted ? '' : 'color:' + color + ';');
+      return '<div class="' + cls + '" style="' + style + '">' + text + '</div>';
+    }
+
+    // Smooth a point series into a Catmull-Rom-derived cubic Bezier path so
+    // the line reads as a flowing curve instead of jagged straight segments.
+    function smoothPathD(pts) {
+      if (pts.length < 2) return '';
+      if (pts.length === 2) return 'M' + pts[0][0] + ',' + pts[0][1] + ' L' + pts[1][0] + ',' + pts[1][1];
+      let d = 'M' + pts[0][0] + ',' + pts[0][1];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i === 0 ? i : i - 1];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+        const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+        const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+        const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ' C' + cp1x.toFixed(2) + ',' + cp1y.toFixed(2) + ' ' + cp2x.toFixed(2) + ',' + cp2y.toFixed(2) + ' ' + p2[0].toFixed(2) + ',' + p2[1].toFixed(2);
+      }
+      return d;
+    }
+
+    function drawChart(series, startPrice, sellPrice, buyPrice) {
+      if (!series || series.length < 2) {
+        return '<div class="text-muted" style="padding:30px;text-align:center">Not enough data yet. Prices will appear automatically as the bot updates.</div>';
+      }
+      const prices = series.map(s => s.price);
+      const w = 800, h = 240, padL = 50, padR = 10, padT = 16, padB = 24;
+      const rangeVals = [...prices, startPrice];
+      if (sellPrice && isFinite(sellPrice)) rangeVals.push(sellPrice);
+      if (buyPrice && isFinite(buyPrice)) rangeVals.push(buyPrice);
+      const min = Math.min(...rangeVals);
+      const max = Math.max(...rangeVals);
+      const range = max - min || 1;
+      const xStep = (w - padL - padR) / (prices.length - 1);
+      const yScale = p => padT + (1 - (p - min) / range) * (h - padT - padB);
+      const xPct = x => (x / w) * 100;
+      const yPct = y => (y / h) * 100;
+
+      const pts = prices.map((p, i) => [padL + i * xStep, yScale(p)]);
+      const lineD = smoothPathD(pts);
+      const up = prices[prices.length - 1] >= prices[0];
+      const color = up ? '#2ebd85' : '#f6465d';
+      const baseY = h - padB;
+      const areaD = lineD + ' L' + pts[pts.length - 1][0].toFixed(2) + ',' + baseY + ' L' + pts[0][0].toFixed(2) + ',' + baseY + ' Z';
+      const gradId = 'chartFill' + (up ? 'Up' : 'Down');
+
+      const startY = yScale(startPrice);
+
+      let gridLines = '';
+      let overlay = '';
+      for (let i = 0; i <= 4; i++) {
+        const y = padT + i * (h - padT - padB) / 4;
+        const val = max - i * range / 4;
+        gridLines += '<line x1="' + padL + '" y1="' + y + '" x2="' + (w - padR) + '" y2="' + y + '" stroke="#232c44" stroke-width="0.5" stroke-dasharray="3,4" vector-effect="non-scaling-stroke"/>';
+        overlay += chartTag(xPct(padL - 6), yPct(y), fmtPrice(val), null, 'end', null, true);
+      }
+
+      let triggerLines = '';
+      if (sellPrice && isFinite(sellPrice)) {
+        const sy = yScale(sellPrice);
+        triggerLines += '<line x1="' + padL + '" y1="' + sy + '" x2="' + (w - padR) + '" y2="' + sy + '" stroke="#2ebd85" stroke-width="1.4" stroke-dasharray="6,3" opacity="0.9" vector-effect="non-scaling-stroke"/>';
+        overlay += chartTag(xPct(padL + 4), yPct(sy), 'Next SELL: $' + fmtPrice(sellPrice), '#2ebd85', 'start', 'above');
+      }
+      if (buyPrice && isFinite(buyPrice)) {
+        const by = yScale(buyPrice);
+        triggerLines += '<line x1="' + padL + '" y1="' + by + '" x2="' + (w - padR) + '" y2="' + by + '" stroke="#f6465d" stroke-width="1.4" stroke-dasharray="6,3" opacity="0.9" vector-effect="non-scaling-stroke"/>';
+        overlay += chartTag(xPct(padL + 4), yPct(by), 'Next BUY: $' + fmtPrice(buyPrice), '#f6465d', 'start', null);
+      }
+      overlay += chartTag(xPct(w - padR - 4), yPct(startY), 'Start: $' + fmtPrice(startPrice), '#f0b90b', 'end', 'above');
+
+      const svg = '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="' + gradId + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.28"/>' +
+        '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>' +
+        '</linearGradient></defs>' +
+        gridLines +
+        triggerLines +
+        '<line x1="' + padL + '" y1="' + startY + '" x2="' + (w - padR) + '" y2="' + startY + '" stroke="#f0b90b" stroke-width="1.2" stroke-dasharray="6,4" opacity="0.85" vector-effect="non-scaling-stroke"/>' +
+        '<path d="' + areaD + '" fill="url(#' + gradId + ')" stroke="none"/>' +
+        '<path d="' + lineD + '" fill="none" stroke="' + color + '" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
+        '</svg>';
+
+      return svg + '<div class="chart-overlay">' + overlay + '</div>';
+    }
+
+    // ========== CREATE PAGE ==========
+    function renderCreateWarning() {
+      const bot = loadBot();
+      const el = document.getElementById('create-warning');
+      if (bot) {
+        el.innerHTML = '<div class="warning-banner">&#9888; A bot already exists (' + escapeHtml(bot.pair) + ') — creating a new one will overwrite it.</div>';
+      } else {
+        el.innerHTML = '';
+      }
+    }
+
+    let pairTimer = null;
+    async function autoFillLowestPrice() {
+      const pair = normalizePair(document.getElementById('f-pair').value);
+      try {
+        const p = await fetchTicker(pair);
+        const lowest = p * 0.85;
+        document.getElementById('f-lowest').value = lowest.toFixed(smartDecimals(p));
+      } catch(e) { /* ignore */ }
+    }
+    document.getElementById('f-pair').addEventListener('input', () => {
+      clearTimeout(pairTimer);
+      pairTimer = setTimeout(autoFillLowestPrice, 600);
+    });
+
+    document.getElementById('create-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('create-submit');
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+      try {
+        const pair = normalizePair(document.getElementById('f-pair').value);
+        const investment = parseFloat(document.getElementById('f-investment').value);
+        const lowestPrice = parseFloat(document.getElementById('f-lowest').value);
+        const gridPct = parseFloat(document.getElementById('f-gridpct').value);
+        const pwd = document.getElementById('f-password').value;
+
+        if (!investment || investment < 10) { toast('Investment must be at least 10 USDT', 'error'); return; }
+        if (!lowestPrice || lowestPrice <= 0) { toast('Lowest price is required', 'error'); return; }
+        if (!gridPct || gridPct < 0.3 || gridPct > 10) { toast('Profit per Grid must be 0.3%–10%', 'error'); return; }
+        if (!pwd || pwd.length < 4) { toast('Set a delete password of at least 4 characters', 'error'); return; }
+
+        const startPrice = await fetchTicker(pair);
+        if (!startPrice || startPrice <= 0) { toast('Could not fetch price for ' + pair, 'error'); return; }
+
+        if (lowestPrice >= startPrice) { toast('Lowest price must be below current price ($' + fmtPrice(startPrice) + ')', 'error'); return; }
+
+        const pwdHash = await sha256Hex(pwd);
+        const bot = new InfinityGridBot({ pair, investment, lowestPrice, gridPct, startPrice, pwdHash });
+        saveBot(bot);
+        priceSeries = [{ price: startPrice, time: nowISO() }];
+        savePriceSeries(priceSeries);
+        toast('Bot created: ' + pair + ' at $' + fmtPrice(startPrice), 'success');
+        showPage('dashboard');
+      } catch(e) {
+        toast('Error creating bot: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '&#9889; Create Bot';
+      }
+    });
+
+    // ========== BACKTEST PAGE ==========
+    const btDays = document.getElementById('bt-days');
+    const btDaysVal = document.getElementById('bt-days-val');
+    btDays.addEventListener('input', () => { btDaysVal.textContent = btDays.value; });
+
+    document.getElementById('bt-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('bt-submit');
+      btn.disabled = true;
+      const prog = document.getElementById('bt-progress');
+      const fill = document.getElementById('bt-progress-fill');
+      const ptext = document.getElementById('bt-progress-text');
+      prog.style.display = 'block';
+      fill.style.width = '0%';
+      ptext.textContent = 'Fetching candles...';
+      try {
+        const pair = normalizePair(document.getElementById('bt-pair').value);
+        const investment = parseFloat(document.getElementById('bt-investment').value);
+        const lowestPrice = parseFloat(document.getElementById('bt-lowest').value);
+        const gridPct = parseFloat(document.getElementById('bt-gridpct').value);
+        const days = parseInt(btDays.value);
+        const saveAsBot = document.getElementById('bt-save').checked;
+
+        if (!investment || investment < 10) { toast('Investment must be at least 10 USDT', 'error'); return; }
+        if (!lowestPrice || lowestPrice <= 0) { toast('Lowest price is required', 'error'); return; }
+        if (!gridPct || gridPct < 0.3 || gridPct > 10) { toast('Profit per Grid must be 0.3%–10%', 'error'); return; }
+
+        const candles = await fetchOHLCCandlesDeep(pair, '1m', days * 1440, (frac, done, total) => {
+          fill.style.width = Math.round(frac * 50) + '%';
+          ptext.textContent = 'Fetching 1m candles... ' + done + '/' + total;
+        });
+        if (candles.length < 2) { toast('Not enough candle data', 'error'); return; }
+
+        let warningHtml = '';
+        if (candles.truncated) {
+          warningHtml = '<div class="panel" style="border-color:rgba(255,180,60,.45)">'
+            + '<div class="flex-between" style="gap:12px">'
+            + '<span>⚠️ Fetched <b>' + candles.length.toLocaleString() + '</b> of <b>'
+            + (days * 1440).toLocaleString() + '</b> candles — backtest covers less history than requested.</span>'
+            + '<button type="button" class="btn btn-primary" id="bt-retry-fetch" style="padding:6px 14px;font-size:12px;white-space:nowrap">&#8635; Retry</button>'
+            + '</div></div>';
+        }
+
+        const startPrice = candles[0].close;
+        if (lowestPrice >= startPrice) { toast('Lowest price must be below backtest start price ($' + fmtPrice(startPrice) + ')', 'error'); return; }
+        const btLowest = lowestPrice || startPrice * 0.85;
+        const bot = new InfinityGridBot({ pair, investment, lowestPrice: btLowest, gridPct, startPrice });
+
+        // Each candle is replayed through its own low→high→close (or
+        // high→low→close) path — see ohlcPath() — instead of just its
+        // closing price, so grid levels crossed and reversed within a
+        // single minute aren't skipped.
+        let buyCount = 0, sellCount = 0, holdCount = 0;
+        for (let i = 0; i < candles.length; i++) {
+          const candleISO = new Date(candles[i].ts).toISOString();
+          for (const price of ohlcPath(candles[i])) {
+            const action = bot.rebalance(price, candleISO, true);
+            if (action === 'BUY') buyCount++;
+            else if (action === 'SELL') sellCount++;
+            else if (action === 'HOLD') holdCount++;
+          }
+          fill.style.width = (50 + Math.round((i / candles.length) * 50)) + '%';
+          ptext.textContent = 'Simulating... ' + (i + 1) + '/' + candles.length;
+          if (i % 20 === 0) await new Promise(r => setTimeout(r, 0));
+        }
+
+        const endPrice = candles[candles.length - 1].close;
+        const finalValue = bot.totalValue(endPrice);
+        const totalProfit = bot.totalProfit(endPrice);
+        const priceChangePct = ((endPrice - startPrice) / startPrice) * 100;
+        const upnl = bot.unrealizedPnl(endPrice);
+
+        fill.style.width = '100%';
+        ptext.textContent = 'Done! ' + candles.length + ' candles simulated';
+
+        const profitClass = totalProfit >= 0 ? 'text-green' : 'text-red';
+        const pcClass = priceChangePct >= 0 ? 'text-green' : 'text-red';
+
+        let html = warningHtml + '<div class="metric-grid mt-16">';
+        html += metricCard('Start Price', '$' + fmtPrice(startPrice), 'First candle');
+        html += metricCard('End Price', '$' + fmtPrice(endPrice), '<span class="' + pcClass + '">' + fmtSigned(priceChangePct, true) + '</span>');
+        html += metricCard('Final Value', '$' + fmtMoney(finalValue), 'vs $' + fmtMoney(investment) + ' invested');
+        html += metricCard('Total Profit', '<span class="' + profitClass + '">' + fmtProfit(totalProfit) + '</span>', '<span class="' + profitClass + '">' + fmtSigned((totalProfit / investment) * 100, true) + '</span> return');
+        html += '</div>';
+
+        html += '<div class="panel"><div class="panel-title">Backtest Details</div><div class="info-grid">';
+        html += infoRow('Grid Profit', '<span class="' + (bot.gridProfit >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(bot.gridProfit) + '</span>');
+        html += infoRow('Unrealized PnL', '<span class="' + (upnl >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(upnl) + '</span>');
+        html += infoRow('Trades', bot.tradeCount + ' (' + buyCount + ' buy / ' + sellCount + ' sell)');
+        html += infoRow('Fees Paid', '$' + fmtMoney(bot.totalFees));
+        html += infoRow('Candles Tested', candles.length);
+        html += infoRow('Holds', holdCount);
+        html += infoRow('Final Base', fmtAmount(bot.base));
+        html += infoRow('Final USDT', '$' + fmtMoney(bot.usdt));
+        html += '</div></div>';
+
+        if (bot.history.length > 0) {
+          const trades = bot.history.slice().reverse().slice(0, 30);
+          html += '<div class="panel"><div class="panel-title">Backtest Trades (last 30)</div><div style="overflow-x:auto"><table><thead><tr><th>Time</th><th>Action</th><th>Price</th><th>Amount</th><th>Base Value</th><th>Grid Profit</th></tr></thead><tbody>';
+          trades.forEach(t => {
+            const cls = t.action.toLowerCase();
+            html += '<tr><td class="nowrap">' + fmtTime(t.time) + '</td><td><span class="tag ' + cls + '">' + t.action + '</span></td><td>$' + fmtPrice(t.price) + '</td><td>' + (t.amount ? fmtAmount(t.amount) : '—') + '</td><td>$' + fmtMoney(t.baseValue) + '</td><td>' + fmtProfit(t.gridProfit) + '</td></tr>';
+          });
+          html += '</tbody></table></div></div>';
+        }
+
+        document.getElementById('bt-results').innerHTML = html;
+        const retryBtn = document.getElementById('bt-retry-fetch');
+        if (retryBtn) retryBtn.addEventListener('click', () => document.getElementById('bt-form').requestSubmit());
+
+        if (saveAsBot) {
+          bot.startPrice = startPrice;
+          saveBot(bot);
+          priceSeries = candles.slice(-MAX_SERIES).map(c => ({ price: c.close, time: new Date(c.ts).toISOString() }));
+          savePriceSeries(priceSeries);
+          toast('Backtest saved as current bot state', 'success');
+        }
+
+        toast('Backtest complete: ' + candles.length + ' candles, ' + bot.tradeCount + ' trades', 'success');
+      } catch(e) {
+        toast('Backtest error: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '&#9654; Run Backtest';
+        setTimeout(() => { prog.style.display = 'none'; }, 3000);
+      }
+    });
+
+    // ========== LIVE UPDATE PAGE ==========
+    function appendLog(action, price, value, profit) {
+      const log = document.getElementById('live-log');
+      if (!log) return;
+      const now = new Date();
+      const ts = now.toTimeString().slice(0, 8);
+      const cls = 'log-' + action.toLowerCase().replace(/[^a-z]/g, '');
+      const profitStr = (profit >= 0 ? '+' : '') + fmtMoney(profit);
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = '[' + ts + '] ' + action + '  $' + fmtPrice(price) + '  |  value $' + fmtMoney(value) + '  |  profit ' + profitStr;
+      if (log.children.length === 1 && log.children[0].classList.contains('log-info')) log.innerHTML = '';
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // ========== CATCH-UP SYNC ==========
+    let isSyncing = false;
+
+    async function catchUpSync() {
+      if (isSyncing) return;
+      const bot = loadBot();
+      if (!bot) return;
+      const lastUpdate = new Date(bot.updatedAt).getTime();
+      const now = Date.now();
+      const gapMs = now - lastUpdate;
+      const tenMin = 10 * 60 * 1000;
+      if (gapMs < tenMin) return;
+
+      const oneDay = 24 * 60 * 60 * 1000;
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      const cappedGap = Math.min(gapMs, sevenDays);
+      const cutoff = Math.max(lastUpdate, now - sevenDays);
+      const recentStart = Math.max(cutoff, now - oneDay);
+
+      isSyncing = true;
+      try {
+        let candles = [];
+
+        // Older than 24h ago (if any): 15m resolution is enough page-budget
+        // wise, and still far better than the old close-only approach since
+        // we now also replay each candle's high/low.
+        if (recentStart > cutoff) {
+          const olderCount = Math.ceil((recentStart - cutoff) / (15 * 60 * 1000)) + 5;
+          const older = await fetchOHLCCandlesDeep(bot.pair, '15m', olderCount);
+          candles = candles.concat(older.filter(c => c.ts > cutoff && c.ts <= recentStart));
+        }
+
+        // Last 24h (the part most likely to matter): 1-minute resolution,
+        // so almost nothing falls between two sampled points.
+        const recentCount = Math.ceil((now - recentStart) / (60 * 1000)) + 5;
+        const recent = await fetchOHLCCandlesDeep(bot.pair, '1m', recentCount);
+        candles = candles.concat(recent.filter(c => c.ts > recentStart && c.ts <= now));
+
+        candles.sort((a, b) => a.ts - b.ts);
+        if (candles.length === 0) { isSyncing = false; return; }
+
+        let tradeCount = 0;
+        let processed = 0;
+        for (const c of candles) {
+          const candleISO = new Date(c.ts).toISOString();
+          for (const price of ohlcPath(c)) {
+            const action = bot.rebalance(price, candleISO, true);
+            if (action === 'BUY' || action === 'SELL') tradeCount++;
+          }
+          processed++;
+          if (processed % 50 === 0) await new Promise(r => setTimeout(r, 0));
+        }
+
+        saveBot(bot);
+        addPrice(candles[candles.length - 1].close);
+
+        if (tradeCount > 0) {
+          const hours = Math.round(cappedGap / (60 * 60 * 1000));
+          toast('Synced ' + hours + 'h of missed trading — ' + tradeCount + ' trades executed', 'success');
+        }
+      } catch(e) {
+        // Silent fail
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    // ========== AUTO BACKGROUND UPDATES ==========
+    let autoFetchTimer = null;
+    let isFetching = false;
+
+    function updateWsStatusUi(isLive, isReconnecting) {
+      document.querySelectorAll('.ws-status-el').forEach(el => {
+        if (isLive) {
+          el.textContent = '● Live';
+          el.className = 'ws-dot live ws-status-el';
+        } else if (isReconnecting) {
+          el.textContent = '● Reconnecting…';
+          el.className = 'ws-dot down ws-status-el';
+        } else {
+          el.textContent = '● REST fallback';
+          el.className = 'ws-dot down ws-status-el';
+        }
+      });
+    }
+
+    async function autoFetchPrice() {
+      if (isFetching) return;
+      const bot = loadBot();
+      if (!bot) return;
+      wsSubscribe([bot.pair]);
+      isFetching = true;
+      try {
+        const cached = livePrices[bot.pair];
+        const fromWs = !!(cached && Date.now() - cached.ts < 5000);
+        const price = fromWs ? cached.last : await getLivePrice(bot.pair);
+        addPrice(price);
+        const action = bot.rebalance(price);
+        saveBot(bot);
+        updateWsStatusUi(fromWs);
+
+        const dashActive = document.getElementById('page-dashboard').classList.contains('active');
+        if (dashActive) {
+          updateDashboardLive(bot, price, action);
+        }
+
+        const liveActive = document.getElementById('page-live').classList.contains('active');
+        if (liveActive) {
+          const value = bot.totalValue(price);
+          const profit = bot.totalProfit(price);
+          appendLog(action, price, value, profit);
+          const ls = document.getElementById('live-status');
+          if (ls) ls.textContent = 'Last: $' + fmtPrice(price) + ' — ' + action;
+        }
+
+        if (action === 'BUY') toast('BUY @ $' + fmtPrice(price), 'success');
+        else if (action === 'SELL') toast('SELL @ $' + fmtPrice(price), 'info');
+        else if (action.startsWith('STOPPED')) toast('Bot STOPPED — below lowest price', 'warning');
+      } catch(e) {
+        // Silent fail for background fetches
+      } finally {
+        isFetching = false;
+      }
+    }
+
+    function updateDashboardLive(bot, price, action) {
+      const tv = bot.totalValue(price);
+      const tp = bot.totalProfit(price);
+      const upnl = bot.unrealizedPnl(price);
+      const pctReturn = (tp / bot.investment) * 100;
+      const priceChange = ((price - bot.startPrice) / bot.startPrice) * 100;
+      const profitClass = tp >= 0 ? 'text-green' : 'text-red';
+      const priceChangeClass = priceChange >= 0 ? 'text-green' : 'text-red';
+
+      // Status pill
+      const pill = document.querySelector('.status-pill');
+      if (pill) {
+        pill.className = 'status-pill ' + (bot.status === 'RUNNING' ? 'running' : 'stopped');
+        pill.innerHTML = '<span class="dot"></span>' + bot.status;
+      }
+
+      // Auto-status text
+      const autoStatus = document.getElementById('auto-status');
+      if (autoStatus) {
+        autoStatus.textContent = 'last: $' + fmtPrice(price) + ' — ' + action;
+      }
+
+      // Current Holdings
+      const curBase = document.getElementById('cur-base');
+      const curUsdt = document.getElementById('cur-usdt');
+      const curTotal = document.getElementById('cur-total');
+      const holdingsUpdated = document.getElementById('holdings-updated');
+      if (curBase) curBase.textContent = fmtAmount(bot.base);
+      if (curUsdt) curUsdt.textContent = '$' + fmtMoney(bot.usdt);
+      if (curTotal) curTotal.textContent = '$' + fmtMoney(tv);
+      if (holdingsUpdated) holdingsUpdated.textContent = 'Updated ' + fmtTime(bot.updatedAt);
+
+      // Metric cards (the first 6 in the first metric-grid)
+      const grids = document.querySelectorAll('#dash-content > .metric-grid');
+      if (grids.length > 0) {
+        const cards = grids[0].querySelectorAll('.metric-card');
+        if (cards.length >= 6) {
+          const priceValEl = cards[0].querySelector('.metric-value');
+          priceValEl.textContent = '$' + fmtPrice(price);
+          flashPrice(priceValEl, price);
+          cards[1].querySelector('.metric-value').innerHTML = '<span class="' + priceChangeClass + '">' + fmtSigned(priceChange, true) + '</span>';
+          cards[2].querySelector('.metric-value').textContent = '$' + fmtMoney(tv);
+          cards[3].querySelector('.metric-value').innerHTML = '<span class="' + profitClass + '">' + fmtProfit(tp) + '</span>';
+          cards[4].querySelector('.metric-value').innerHTML = '<span class="' + profitClass + '">' + fmtSigned(pctReturn, true) + '</span>';
+          cards[5].querySelector('.metric-value').innerHTML = '<span class="' + (upnl >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(upnl) + '</span>';
+        }
+      }
+
+      // Holdings panel info rows
+      const infoPanels = document.querySelectorAll('#dash-content .two-col .panel');
+      if (infoPanels.length >= 2) {
+        const holdingsRows = infoPanels[1].querySelectorAll('.info-row .val');
+        if (holdingsRows.length >= 8) {
+          holdingsRows[0].textContent = fmtAmount(bot.base);
+          holdingsRows[1].textContent = '$' + fmtMoney(bot.base * price);
+          holdingsRows[2].textContent = '$' + fmtMoney(bot.usdt);
+          holdingsRows[3].textContent = '$' + fmtPrice(bot.avgBuyPrice);
+          holdingsRows[4].innerHTML = '<span class="' + (bot.gridProfit >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(bot.gridProfit) + '</span>';
+          holdingsRows[5].innerHTML = '<span class="' + (upnl >= 0 ? 'text-green' : 'text-red') + '">' + fmtProfit(upnl) + '</span>';
+          holdingsRows[6].textContent = bot.tradeCount;
+          holdingsRows[7].textContent = '$' + fmtMoney(bot.totalFees);
+        }
+        // Bot Parameters Last Update
+        const paramRows = infoPanels[0].querySelectorAll('.info-row .val');
+        if (paramRows.length >= 7) {
+          paramRows[6].textContent = fmtTime(bot.updatedAt);
+        }
+      }
+
+      // Next Grid Levels
+      updateTriggerPanel(bot, price);
+
+      // Chart
+      const trigLive = computeNextTriggers(bot, price);
+      const chartSvg = document.querySelector('#dash-content svg.chart');
+      if (chartSvg && chartSvg.parentElement) {
+        chartSvg.parentElement.innerHTML = drawChart(priceSeries, bot.startPrice, trigLive.sellPrice, trigLive.buyPrice);
+      }
+
+      // Trades table — refresh when a trade action occurred
+      if (action === 'BUY' || action === 'SELL' || action.startsWith('STOPPED') || action === 'RESUME') {
+        const tradesPanel = document.getElementById('trades-panel');
+        if (tradesPanel) {
+          tradesPanel.outerHTML = renderTradesTable(bot);
+        }
+      }
+    }
+
+    function startAutoFetch() {
+      connectWs();
+      const bot = loadBot();
+      if (bot) wsSubscribe([bot.pair]);
+      if (autoFetchTimer) return;
+      autoFetchTimer = setInterval(autoFetchPrice, AUTO_INTERVAL);
+      setTimeout(autoFetchPrice, 500);
+    }
+
+    function stopAutoFetch() {
+      if (autoFetchTimer) { clearInterval(autoFetchTimer); autoFetchTimer = null; }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        stopAutoFetch();
+        catchUpSync();
+        startAutoFetch();
+      }
+    });
+
+    // ========== PUMP TRACKER ==========
+    const WATCHLIST = ['BTC-USDT','ETH-USDT','SOL-USDT','BNB-USDT','XRP-USDT','DOGE-USDT','ADA-USDT','AVAX-USDT','LINK-USDT','PEPE-USDT','SHIB-USDT','WIF-USDT','BONK-USDT','FLOKI-USDT','TON-USDT','SUI-USDT','SEI-USDT','TIA-USDT','PUMP-USDT'];
+    let pumpSelectedCoin = null;
+    let pumpTimer = null;
+    let lastTop3 = [];
+
+    async function renderPumpTracker() {
+      if (pumpTimer) { clearInterval(pumpTimer); pumpTimer = null; }
+      wsSubscribe(WATCHLIST); // instant per-coin updates for the watchlist
+      await fetchAndRenderPumpData();
+      // The "top gainers" ranking scans the whole spot market (hundreds of
+      // pairs), which isn't practical to stream over WebSocket, so it still
+      // polls REST — just much more often than before.
+      pumpTimer = setInterval(fetchAndRenderPumpData, PUMP_INTERVAL);
+    }
+
+    async function fetchAndRenderPumpData() {
+      const pumpActive = document.getElementById('page-pump').classList.contains('active');
+      if (!pumpActive) {
+        if (pumpTimer) { clearInterval(pumpTimer); pumpTimer = null; }
+        return;
+      }
+      try {
+        const all = await fetchAllTickers();
+        // Overlay any fresher WebSocket ticks we've received for watchlist coins
+        const merged = all.map(t => {
+          const live = livePrices[t.instId];
+          if (live && Date.now() - live.ts < 5000) {
+            return { ...t, last: String(live.last), open24h: String(live.open24h), high24h: String(live.high24h || t.high24h), low24h: String(live.low24h || t.low24h) };
+          }
+          return t;
+        });
+        const watchlistData = merged.filter(t => WATCHLIST.includes(t.instId));
+        renderWatchlist(watchlistData);
+        renderPumpAlerts(merged);
+        if (pumpSelectedCoin) await renderSimPanel(pumpSelectedCoin, merged);
+        const status = document.getElementById('pump-watchlist-status');
+        if (status) status.textContent = 'Updated ' + new Date().toTimeString().slice(0, 8);
+      } catch(e) {
+        const status = document.getElementById('pump-watchlist-status');
+        if (status) status.textContent = 'Error fetching data';
+      }
+    }
+
+    function renderWatchlist(data) {
+      const container = document.getElementById('pump-watchlist');
+      if (!container) return;
+      const items = data.map(t => ({
+        instId: t.instId,
+        symbol: t.instId.split('-')[0],
+        last: parseFloat(t.last),
+        open24h: parseFloat(t.open24h),
+        high24h: parseFloat(t.high24h),
+        low24h: parseFloat(t.low24h),
+        changePct: ((parseFloat(t.last) - parseFloat(t.open24h)) / parseFloat(t.open24h)) * 100
+      })).sort((a, b) => b.changePct - a.changePct);
+
+      let html = '';
+      items.forEach(c => {
+        const cls = c.changePct >= 0 ? 'text-green' : 'text-red';
+        const selectedCls = c.instId === pumpSelectedCoin ? ' selected' : '';
+        let badge = '';
+        if (c.changePct >= 5) badge = '<div class="pump-badge up">\uD83D\uDD25 PUMPING</div>';
+        else if (c.changePct <= -5) badge = '<div class="pump-badge down">\uD83D\uDCA9 DUMPING</div>';
+        html += '<div class="coin-card' + selectedCls + '" data-coin="' + c.instId + '">';
+        html += '<div class="coin-symbol">' + c.symbol + '</div>';
+        const prevP = watchPrevPrices[c.instId];
+        const flashCls = prevP !== undefined && prevP !== c.last
+          ? (c.last > prevP ? ' price-flash-up' : ' price-flash-down') : '';
+        watchPrevPrices[c.instId] = c.last;
+        html += '<div class="coin-price' + flashCls + '">$' + fmtPrice(c.last) + '</div>';
+        html += '<div class="coin-change ' + cls + '">' + fmtSigned(c.changePct, true) + '</div>';
+        html += '<div class="coin-hl">H: $' + fmtPrice(c.high24h) + ' / L: $' + fmtPrice(c.low24h) + '</div>';
+        html += badge;
+        html += '</div>';
+      });
+      container.innerHTML = html;
+
+      container.querySelectorAll('.coin-card').forEach(card => {
+        card.addEventListener('click', () => {
+          pumpSelectedCoin = card.dataset.coin;
+          container.querySelectorAll('.coin-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          fetchAndRenderPumpData();
+        });
+      });
+    }
+
+    async function renderSimPanel(instId, allTickers) {
+      const panel = document.getElementById('pump-sim-panel');
+      if (!panel) return;
+      const ticker = allTickers.find(t => t.instId === instId);
+      if (!ticker) return;
+      const last = parseFloat(ticker.last);
+      const open24h = parseFloat(ticker.open24h);
+      const valueIf100 = 100 * (last / open24h);
+      const changePct = ((last - open24h) / open24h) * 100;
+      const coinSymbol = instId.split('-')[0];
+
+      let html = '<div class="panel"><div class="panel-title">$100 Simulation: ' + escapeHtml(coinSymbol) + '</div>';
+      html += '<div class="metric-grid" style="margin-bottom:16px">';
+      html += metricCard('$100 invested 24h ago', '$' + fmtMoney(valueIf100), 'At current price');
+      html += metricCard('Current Value', '$100.00', 'If bought now');
+      html += metricCard('24h Change', '<span class="' + (changePct >= 0 ? 'text-green' : 'text-red') + '">' + fmtSigned(changePct, true) + '</span>', 'Price now vs 24h ago');
+      html += '</div>';
+      html += '<div id="pump-chart-container" class="chart-container">' + drawChart([], last) + '</div>';
+      html += '</div>';
+      panel.innerHTML = html;
+
+      try {
+        const candles = await fetchCandles(instId, 1, null);
+        const chartData = candles.map(c => ({ price: c.close, time: new Date(c.ts).toISOString() }));
+        const chartContainer = document.getElementById('pump-chart-container');
+        if (chartContainer) chartContainer.innerHTML = drawChart(chartData, open24h);
+      } catch(e) {
+        const chartContainer = document.getElementById('pump-chart-container');
+        if (chartContainer) chartContainer.innerHTML = '<div class="text-muted" style="padding:20px;text-align:center">Could not load chart data</div>';
+      }
+    }
+
+    function renderPumpAlerts(allTickers) {
+      const container = document.getElementById('pump-alerts');
+      if (!container) return;
+      const spotUsdt = allTickers.filter(t => t.instId.endsWith('-USDT'));
+      const withChange = spotUsdt.map(t => ({
+        instId: t.instId,
+        symbol: t.instId.split('-')[0],
+        last: parseFloat(t.last),
+        changePct: ((parseFloat(t.last) - parseFloat(t.open24h)) / parseFloat(t.open24h)) * 100
+      })).filter(t => isFinite(t.changePct))
+        .sort((a, b) => b.changePct - a.changePct)
+        .slice(0, 3);
+
+      const currentTop3 = withChange.map(c => c.instId);
+      const isNew = currentTop3.some(id => !lastTop3.includes(id));
+
+      let html = '';
+      withChange.forEach((c, i) => {
+        const flashCls = isNew ? ' flash' : '';
+        html += '<div class="pump-alert-item' + flashCls + '">';
+        html += '<div class="rank">#' + (i + 1) + ' Top Pump</div>';
+        html += '<div class="sym">' + escapeHtml(c.symbol) + '</div>';
+        html += '<div class="gain">' + fmtSigned(c.changePct, true) + '</div>';
+        html += '<div class="px">$' + fmtPrice(c.last) + '</div>';
+        html += '</div>';
+      });
+      if (withChange.length === 0) html = '<div class="text-muted" style="padding:12px">No pump data available</div>';
+      container.innerHTML = html;
+      lastTop3 = currentTop3;
+    }
+
+    // ========== INIT ==========
+    catchUpSync();
+    renderDashboard();
+    startAutoFetch();
+    
+    // ========== COIN PICKER (searchable dropdown for trading pairs) ==========
+    const coinPickerCache = { list: null, ts: 0 };
+    const watchPrevPrices = {}; // for price-flash on pump tracker cards
+
+    async function getCoinList() {
+      if (coinPickerCache.list && Date.now() - coinPickerCache.ts < 5 * 60 * 1000) return coinPickerCache.list;
+      const tickers = await fetchAllTickers();
+      coinPickerCache.list = tickers.map(t => t.instId)
+        .filter(id => id.endsWith('-USDT') && !id.slice(0, -5).includes('-'))
+        .sort();
+      coinPickerCache.ts = Date.now();
+      return coinPickerCache.list;
+    }
+
+    function initCoinPicker(inputEl) {
+      if (!inputEl || inputEl.dataset.cpInit) return;
+      inputEl.dataset.cpInit = '1';
+      inputEl.setAttribute('autocomplete', 'off');
+      const wrap = document.createElement('div');
+      wrap.className = 'coin-picker';
+      inputEl.parentNode.insertBefore(wrap, inputEl);
+      wrap.appendChild(inputEl);
+      const listEl = document.createElement('div');
+      listEl.className = 'cp-list';
+      wrap.appendChild(listEl);
+      let coins = [];
+
+      async function ensureCoins() {
+        if (!coins.length) { try { coins = await getCoinList(); } catch (e) { coins = []; } }
+      }
+
+      function renderList(filter) {
+        const q = (filter || '').trim().toUpperCase().replace(/\//g, '-');
+        const matches = coins.filter(id => !q || id.includes(q)).slice(0, 60);
+        if (!matches.length) { listEl.style.display = 'none'; return; }
+        listEl.innerHTML = matches.map(id => {
+          const hi = q ? id.replace(q, '<b>' + q + '</b>') : id;
+          return '<div class="cp-item" data-val="' + id + '"><span>' + hi + '</span><span class="text-muted" style="font-size:11px">OKX</span></div>';
+        }).join('');
+        listEl.style.display = 'block';
+        listEl.querySelectorAll('.cp-item').forEach(item => {
+          item.addEventListener('mousedown', (ev) => {
+            ev.preventDefault();
+            inputEl.value = item.dataset.val;
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            listEl.style.display = 'none';
+          });
+        });
+      }
+
+      inputEl.addEventListener('focus', async () => { await ensureCoins(); renderList(inputEl.value); });
+      inputEl.addEventListener('input', () => renderList(inputEl.value));
+      inputEl.addEventListener('blur', () => setTimeout(() => { listEl.style.display = 'none'; }, 150));
+    }
+
+    initCoinPicker(document.getElementById('f-pair'));
+    initCoinPicker(document.getElementById('bt-pair'));
+
+    // ========== PRICE FLASH ANIMATION helper ==========
+    function flashPrice(el, newPrice) {
+      if (!el) return;
+      const prev = parseFloat(el.dataset.prev);
+      el.dataset.prev = newPrice;
+      if (isNaN(prev) || prev === newPrice) return;
+      el.classList.remove('price-flash-up', 'price-flash-down');
+      void el.offsetWidth; // restart animation if already flashing
+      el.classList.add(newPrice > prev ? 'price-flash-up' : 'price-flash-down');
+    }
+
+  </script>
+  </body>
+</html>
